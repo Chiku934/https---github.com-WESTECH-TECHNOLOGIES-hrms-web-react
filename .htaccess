@@ -1,0 +1,19 @@
+RewriteEngine On
+
+# Serve the root app entrypoint and keep project-relative routes working.
+DirectoryIndex index.php
+
+# React fallback for clean client-side routes while preserving existing PHP files.
+RewriteCond %{REQUEST_URI} ^/(dashboard|requests|payroll|user-support|user-support-tickets|user-support-knowledge-base|user-support-requests|user-support-faq|user-leave|user-leave-apply|user-leave-status|timesheet|user-attendance|user-performance(?:-[^/]+)?|user-expenses|myteam_leave(?:_[^/]+)?)$ [NC]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]
+
+# Let existing files and folders load normally.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Route clean project URLs to the PHP pages living in /public.
+RewriteRule ^$ index.php [L]
+RewriteRule ^(.*)$ public/$1 [L]

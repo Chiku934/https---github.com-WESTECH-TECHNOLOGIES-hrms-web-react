@@ -1,0 +1,102 @@
+.expenses-page {
+    color: #1f2937;
+}
+
+.expenses-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: #fff;
+    border: 1px solid #e5eaf2;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+
+.expenses-tab {
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #7b8796;
+    text-decoration: none;
+    border-right: 1px solid #edf1f6;
+    white-space: nowrap;
+}
+
+.expenses-tab.active {
+    background: #f3eefc;
+    color: #6b55bc;
+    font-weight: 700;
+}
+
+.expenses-tab:last-child {
+    border-right: 0;
+}
+
+.expenses-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.expenses-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #334155;
+    margin: 0 0 3px;
+}
+
+.expenses-sub {
+    font-size: 11px;
+    color: #7b8796;
+}
+
+.expenses-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 14px;
+    border-radius: 3px;
+    background: #6b55bc;
+    color: #fff;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.expenses-panel {
+    background: #fff;
+    border: 1px solid #e5eaf2;
+    border-radius: 2px;
+    box-shadow: 0 1px 0 rgba(18, 22, 33, 0.02);
+    padding: 14px;
+    margin-bottom: 16px;
+}
+
+.expenses-box {
+    background: #dff6ff;
+    border: 1px solid #bfe9f5;
+    border-radius: 2px;
+    color: #48606d;
+    font-size: 12px;
+    padding: 12px 14px;
+}
+
+.section {
+    margin-bottom: 16px;
+}
+
+.section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #334155;
+    margin: 0 0 6px;
+}
+
+.section-help {
+    font-size: 11px;
+    color: #7b8796;
+    margin: 0 0 10px;
+}

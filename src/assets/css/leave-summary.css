@@ -1,0 +1,484 @@
+body.leave-page {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: #eef2f7;
+    min-height: 100vh;
+}
+
+.leave-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.leave-main {
+    flex: 1;
+    margin-left: 260px;
+    background: #f4f6fb;
+    min-width: 0;
+}
+
+.leave-content {
+    padding: 12px 16px 24px;
+    color: #1f2937;
+}
+
+.leave-topline {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b55bc;
+    margin: 0 0 14px;
+}
+
+.leave-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #334155;
+    margin: 0 0 12px;
+}
+
+.leave-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.period-select {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid #dfe5f1;
+    border-radius: 2px;
+    background: #fff;
+    color: #6b55bc;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.request-grid {
+    display: grid;
+    grid-template-columns: 1fr 250px;
+    gap: 14px;
+    align-items: stretch;
+}
+
+.panel {
+    background: #fff;
+    border: 1px solid #e5eaf2;
+    border-radius: 2px;
+    box-shadow: 0 1px 0 rgba(18, 22, 33, 0.02);
+}
+
+.panel-pad {
+    padding: 14px;
+}
+
+.request-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 86px;
+}
+
+.request-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #f5f1ff;
+    color: #6b55bc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.request-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 4px;
+}
+
+.request-sub {
+    font-size: 11px;
+    color: #7a8598;
+}
+
+.request-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.request-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #6b55bc;
+    color: #fff;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 9px 12px;
+    border-radius: 2px;
+}
+
+.request-link {
+    font-size: 11px;
+    color: #6b55bc;
+    text-decoration: none;
+}
+
+.leave-stats-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr 1.65fr;
+    gap: 14px;
+}
+
+.mini-chart-card {
+    min-height: 110px;
+}
+
+.mini-chart-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.mini-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.mini-donut {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 76px;
+}
+
+.mini-donut svg {
+    width: 72px;
+    height: 72px;
+}
+
+.mini-donut text {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    fill: #5b5fb0;
+}
+
+.mini-months {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 62px;
+    padding-top: 4px;
+}
+
+.month-bar {
+    width: 24px;
+    background: #a89bd8;
+}
+
+.bal-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+}
+
+.balance-card {
+    min-height: 180px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+}
+
+.balance-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 700;
+    color: #4b5563;
+    margin-bottom: 12px;
+}
+
+.view-link {
+    font-size: 11px;
+    color: #8b7cd1;
+    text-decoration: none;
+}
+
+.ring-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: 110px;
+}
+
+.ring-wrap svg {
+    width: 118px;
+    height: 118px;
+}
+
+.ring-center {
+    font-size: 11px;
+    font-weight: 700;
+    fill: #5d60b3;
+    text-anchor: middle;
+}
+
+.balance-foot {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-top: auto;
+    border-top: 1px solid #eef2f7;
+}
+
+.balance-foot div {
+    padding: 10px 4px;
+    border-right: 1px solid #eef2f7;
+    font-size: 10px;
+    color: #8b95a5;
+}
+
+.balance-foot div:last-child {
+    border-right: 0;
+}
+
+.balance-foot strong {
+    display: block;
+    color: #374151;
+    font-size: 11px;
+    margin-top: 4px;
+}
+
+.other-types {
+    background: #fff;
+    border: 1px solid #e5eaf2;
+    padding: 14px;
+    font-size: 12px;
+    color: #475569;
+}
+
+.history-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 16px 0 10px;
+}
+
+.history-tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filter-wrap {
+    position: relative;
+}
+
+.filter-pill {
+    min-width: 130px;
+    height: 34px;
+    border: 1px solid #e5eaf2;
+    background: #fff;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    font-size: 12px;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.search-box {
+    min-width: 220px;
+    height: 34px;
+    border: 1px solid #e5eaf2;
+    background: #fff;
+    border-radius: 2px;
+    padding: 0 12px;
+    font-size: 12px;
+}
+
+.filter-menu {
+    position: absolute;
+    top: 38px;
+    left: 0;
+    min-width: 180px;
+    background: #fff;
+    border: 1px solid #e5eaf2;
+    border-radius: 6px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+    padding: 6px;
+    z-index: 20;
+    display: none;
+}
+
+.filter-menu.open {
+    display: block;
+}
+
+.filter-menu button {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #334155;
+    cursor: pointer;
+}
+
+.filter-menu button:hover,
+.filter-menu button.active {
+    background: #f3eefc;
+    color: #6b55bc;
+}
+
+.table-card {
+    background: #fff;
+    border: 1px solid #e5eaf2;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.table-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.table-count {
+    font-size: 11px;
+    color: #8b95a5;
+}
+
+.leave-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1080px;
+}
+
+.leave-table thead th {
+    background: #f3f5f8;
+    font-size: 9px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 10px;
+    border-bottom: 1px solid #e5eaf2;
+    text-align: left;
+}
+
+.leave-table tbody td {
+    padding: 14px 10px;
+    border-bottom: 1px solid #f0f2f6;
+    font-size: 11px;
+    color: #334155;
+    vertical-align: top;
+}
+
+.leave-date {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.leave-sub {
+    display: block;
+    font-size: 10px;
+    color: #8b95a5;
+    margin-top: 4px;
+}
+
+.type-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #f2eefc;
+    color: #6b55bc;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.type-pill.green {
+    background: #e8f7ee;
+    color: #166534;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #5b59c7;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.status-pill.approved {
+    background: #e6f7ef;
+    color: #146c43;
+}
+
+.status-pill.pending {
+    background: #fef3c7;
+    color: #a16207;
+}
+
+.actions-cell {
+    color: #9aa4b2;
+    font-size: 14px;
+    text-align: center;
+}
+
+.leave-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 52px;
+}
+
+.leave-bars span {
+    width: 24px;
+    background: #ac98d8;
+}
+
+.leave-bars .muted {
+    background: #e3dff0;
+}
+
+.leave-empty {
+    padding: 18px;
+    color: #8b95a5;
+    text-align: center;
+    font-size: 12px;
+}
+
+@media (max-width: 1180px) {
+    .request-grid,
+    .leave-stats-grid,
+    .bal-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .leave-table {
+        min-width: 960px;
+    }
+}

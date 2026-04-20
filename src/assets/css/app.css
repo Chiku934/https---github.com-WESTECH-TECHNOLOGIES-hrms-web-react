@@ -1,0 +1,363 @@
+@import url('./global.css');
+@import url('./login.css');
+@import url('./chrome.css');
+@import url('/assets/css/main.css');
+@import url('/assets/css/profile.css');
+@import url('./myteam-leave.css');
+@import url('./myteam-attendance.css');
+@import url('./myteam-expenses.css');
+@import url('./myteam-timesheet.css');
+@import url('./myteam-sections.css');
+@import url('./leave-summary.css');
+@import url('./expenses.css');
+@import url('./performance.css');
+@import url('./requests.css');
+@import url('./utility-pages.css');
+@import url('./sidebar.css');
+@import url('./dashboard.css');
+@import url('./attendance.css');
+@import url('./timesheet.css');
+
+body.myteam-page,
+body.myteam-attendance-page,
+body.myteam-expenses-page,
+body.myteam-section-page,
+body.myteam-timesheet-page,
+body.dashboard-page,
+body.attendance-page,
+body.requests-page {
+  background: #eef2f7;
+  color: #1f2937;
+}
+
+body.myteam-page .myteam-main,
+body.myteam-attendance-page .myteam-main,
+body.myteam-expenses-page .myteam-main,
+body.myteam-section-page .myteam-main,
+body.myteam-timesheet-page .myteam-main,
+body.requests-page .myteam-main,
+body.dashboard-page .dashboard-main,
+body.attendance-page .attendance-main {
+  background: #f4f6fb;
+}
+
+body.myteam-page .myteam-content,
+body.myteam-attendance-page .myteam-content,
+body.myteam-expenses-page .myteam-content,
+body.myteam-section-page .myteam-content,
+body.myteam-timesheet-page .myteam-content,
+body.requests-page .myteam-content,
+body.attendance-page .attendance-content,
+body.dashboard-page .dashboard-content {
+  padding: 12px 16px 24px;
+}
+
+body.myteam-page .myteam-topbar,
+body.myteam-attendance-page .myteam-topbar,
+body.myteam-expenses-page .myteam-topbar,
+body.myteam-section-page .myteam-topbar,
+body.myteam-timesheet-page .myteam-topbar,
+body.requests-page .myteam-topbar,
+body.attendance-page .attendance-topbar {
+  height: 46px;
+  padding: 0 14px 0 16px;
+}
+
+body.myteam-page .myteam-module-nav,
+body.myteam-attendance-page .myteam-module-nav,
+body.myteam-expenses-page .myteam-module-nav,
+body.myteam-section-page .myteam-module-nav,
+body.myteam-timesheet-page .myteam-module-nav,
+body.requests-page .myteam-module-nav,
+body.attendance-page .attendance-module-nav,
+body.myteam-page .myteam-subnav,
+body.myteam-attendance-page .myteam-subnav,
+body.myteam-expenses-page .myteam-subnav,
+body.myteam-section-page .myteam-subnav,
+body.myteam-timesheet-page .myteam-subnav {
+  height: 32px;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+body.myteam-page .myteam-module-nav a,
+body.myteam-attendance-page .myteam-module-nav a,
+body.myteam-expenses-page .myteam-module-nav a,
+body.myteam-section-page .myteam-module-nav a,
+body.myteam-timesheet-page .myteam-module-nav a,
+body.requests-page .myteam-module-nav a,
+body.attendance-page .attendance-module-nav a,
+body.myteam-page .myteam-subnav a,
+body.myteam-attendance-page .myteam-subnav a,
+body.myteam-expenses-page .myteam-subnav a,
+body.myteam-section-page .myteam-subnav a,
+body.myteam-timesheet-page .myteam-subnav a {
+  font-size: 10px;
+}
+
+body.myteam-page .myteam-brand-mark,
+body.myteam-attendance-page .myteam-brand-mark,
+body.myteam-expenses-page .myteam-brand-mark,
+body.myteam-section-page .myteam-brand-mark,
+body.myteam-timesheet-page .myteam-brand-mark,
+body.requests-page .myteam-brand-mark,
+body.attendance-page .attendance-brand-mark {
+  font-size: 16px;
+}
+
+body.myteam-page .myteam-search,
+body.myteam-attendance-page .myteam-search,
+body.myteam-expenses-page .myteam-search,
+body.myteam-section-page .myteam-search,
+body.myteam-timesheet-page .myteam-search,
+body.requests-page .myteam-search,
+body.attendance-page .attendance-search {
+  height: 30px;
+}
+
+body.myteam-page .myteam-search input,
+body.myteam-attendance-page .myteam-search input,
+body.myteam-expenses-page .myteam-search input,
+body.myteam-section-page .myteam-search input,
+body.myteam-timesheet-page .myteam-search input,
+body.requests-page .myteam-search input,
+body.attendance-page .attendance-search input {
+  font-size: 11px;
+}
+
+body.myteam-page .sidebar-brand,
+body.myteam-attendance-page .sidebar-brand,
+body.myteam-expenses-page .sidebar-brand,
+body.myteam-section-page .sidebar-brand,
+body.myteam-timesheet-page .sidebar-brand,
+body.requests-page .sidebar-brand,
+body.attendance-page .sidebar-brand {
+  padding: 0px 0px;
+}
+
+body.myteam-page .sidebar-brand span,
+body.myteam-attendance-page .sidebar-brand span,
+body.myteam-expenses-page .sidebar-brand span,
+body.myteam-section-page .sidebar-brand span,
+body.myteam-timesheet-page .sidebar-brand span,
+body.requests-page .sidebar-brand span,
+body.attendance-page .sidebar-brand span {
+  font-size: 16px;
+}
+
+body.myteam-page .sidebar-link,
+body.myteam-attendance-page .sidebar-link,
+body.myteam-expenses-page .sidebar-link,
+body.myteam-section-page .sidebar-link,
+body.myteam-timesheet-page .sidebar-link,
+body.requests-page .sidebar-link,
+body.attendance-page .sidebar-link {
+  padding: 11px 16px;
+  font-size: 12px;
+}
+
+body.myteam-page .sidebar-subitem,
+body.myteam-attendance-page .sidebar-subitem,
+body.myteam-expenses-page .sidebar-subitem,
+body.myteam-section-page .sidebar-subitem,
+body.myteam-timesheet-page .sidebar-subitem,
+body.requests-page .sidebar-subitem,
+body.attendance-page .sidebar-subitem {
+  padding: 8px 16px 8px 42px;
+  font-size: 11px;
+}
+
+body.myteam-page .dashboard-top-tab,
+body.dashboard-page .dashboard-top-tab {
+  font-size: 10px;
+}
+
+body.myteam-page .dashboard-card,
+body.myteam-attendance-page .panel-card,
+body.myteam-expenses-page .panel-card,
+body.myteam-section-page .panel-card,
+body.myteam-timesheet-page .panel-card,
+body.requests-page .ticket-card,
+body.requests-page .help-panel,
+body.dashboard-page .dashboard-card,
+body.attendance-page .panel-card,
+body.payroll-page .payroll-panel,
+body.payroll-page .payroll-summary-card,
+body.timesheet-page .timesheet-card,
+body.timesheet-page .timesheet-kpi-card,
+body.timesheet-page .timesheet-toolbar,
+body.timesheet-page .timesheet-hero,
+body.timesheet-page .timesheet-tabbar,
+body.timesheet-page .timesheet-summary,
+body.timesheet-page .timesheet-week-grid-shell,
+body.timesheet-page .timesheet-ag-grid-shell,
+body.payroll-page .payroll-modal,
+body.payroll-page .payroll-skeleton-card,
+body.payroll-page .payroll-step-item,
+body.payroll-page .payroll-stepper-shell,
+body.requests-page .requests-shell,
+body.requests-page .requests-detail,
+body.requests-page .requests-left,
+body.requests-page .requests-middle,
+body.requests-page .log-subsection,
+body.requests-page .calendar-shell {
+  border-radius: 2px;
+  box-shadow: 0 1px 0 rgba(18, 22, 33, 0.02);
+}
+
+body.dashboard-page .dashboard-card,
+body.attendance-page .panel-card,
+body.requests-page .ticket-card,
+body.requests-page .help-panel,
+body.payroll-page .payroll-panel,
+body.payroll-page .payroll-summary-card,
+body.payroll-page .payroll-modal,
+body.payroll-page .payroll-skeleton-card,
+body.timesheet-page .timesheet-card,
+body.timesheet-page .timesheet-kpi-card,
+body.timesheet-page .timesheet-toolbar,
+body.timesheet-page .timesheet-hero,
+body.timesheet-page .timesheet-tabbar,
+body.timesheet-page .timesheet-summary,
+body.timesheet-page .timesheet-week-grid-shell,
+body.timesheet-page .timesheet-ag-grid-shell,
+body.requests-page .log-subsection,
+body.requests-page .calendar-shell {
+  border: 1px solid #e5eaf2;
+  background: #fff;
+}
+
+body.dashboard-page .dashboard-card,
+body.attendance-page .panel-card,
+body.requests-page .ticket-card,
+body.requests-page .help-panel,
+body.payroll-page .payroll-panel,
+body.payroll-page .payroll-summary-card,
+body.payroll-page .payroll-modal,
+body.payroll-page .payroll-skeleton-card,
+body.timesheet-page .timesheet-card,
+body.timesheet-page .timesheet-kpi-card,
+body.timesheet-page .timesheet-toolbar,
+body.timesheet-page .timesheet-hero,
+body.timesheet-page .timesheet-tabbar,
+body.timesheet-page .timesheet-summary,
+body.timesheet-page .timesheet-week-grid-shell,
+body.timesheet-page .timesheet-ag-grid-shell,
+body.requests-page .log-subsection,
+body.requests-page .calendar-shell {
+  padding: 12px 14px;
+}
+
+body.dashboard-page .dashboard-card-title,
+body.attendance-page .section-heading,
+body.requests-page .help-title,
+body.requests-page .ticket-title,
+body.requests-page .ticket-card-title,
+body.requests-page .requests-title,
+body.timesheet-page .timesheet-title,
+body.timesheet-page .timesheet-card-head h2,
+body.payroll-page .payroll-panel-head h2,
+body.payroll-page .payroll-summary-value,
+body.payroll-page .payroll-payslip-top h3 {
+  font-size: 14px;
+}
+
+body.dashboard-page .dashboard-card-desc,
+body.attendance-page .stats-cell,
+body.requests-page .help-sub,
+body.requests-page .ticket-card-meta,
+body.requests-page .requests-list-title,
+body.timesheet-page .timesheet-card-head p,
+body.timesheet-page .timesheet-hero p,
+body.payroll-page .payroll-summary-note,
+body.payroll-page .payroll-panel p {
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.placeholder-page {
+  min-height: calc(100vh - 160px);
+  padding: 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.placeholder-card {
+  width: min(100%, 1100px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.98));
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+  padding: 28px;
+}
+
+.placeholder-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.09);
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.placeholder-title {
+  margin: 16px 0 8px;
+  font-size: clamp(28px, 3vw, 40px);
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+.placeholder-description {
+  margin: 0;
+  max-width: 720px;
+  color: #475569;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.placeholder-grid {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.placeholder-panel {
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 16px;
+  padding: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.placeholder-panel strong {
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.placeholder-panel span {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .placeholder-page {
+    padding: 16px;
+  }
+
+  .placeholder-card {
+    padding: 20px;
+  }
+
+  .placeholder-grid {
+    grid-template-columns: 1fr;
+  }
+}

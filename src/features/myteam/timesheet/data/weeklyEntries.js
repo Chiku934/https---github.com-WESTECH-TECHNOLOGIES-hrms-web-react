@@ -1,0 +1,58 @@
+export const timesheetWeeklyEntries = [
+  {
+    id: 'ts-row-1',
+    employeeId: 'emp-1',
+    employee: 'Animesh Das',
+    team: 'Delivery',
+    projectId: 'proj-1',
+    project: 'AHDMS - Open Source',
+    taskId: 'task-1',
+    task: 'Bug Fixes',
+    billable: 'Billable',
+    status: 'Draft',
+    week: '30 Mar - 05 Apr 2026',
+    hours: ['2:00', '1:30', '2:30', '2:00', '0:00', '0:00', '0:00'],
+    comment: 'Fixes for sprint handoff.',
+    attachmentCount: 1,
+    updatedAt: '2026-04-01T10:45:00+05:30',
+  },
+  {
+    id: 'ts-row-2',
+    employeeId: 'emp-2',
+    employee: 'Bhasha Mishra',
+    team: 'Product',
+    projectId: 'proj-2',
+    project: 'GCS - Ticketing System',
+    taskId: 'task-2',
+    task: 'Implementation',
+    billable: 'Non-billable',
+    status: 'Submitted',
+    week: '30 Mar - 05 Apr 2026',
+    hours: ['1:00', '1:00', '1:00', '1:00', '1:00', '0:00', '0:00'],
+    comment: 'Internal process work.',
+    attachmentCount: 0,
+    updatedAt: '2026-04-01T09:05:00+05:30',
+  },
+  {
+    id: 'ts-row-3',
+    employeeId: 'emp-3',
+    employee: 'Bijay Kumar Sahoo',
+    team: 'Support',
+    projectId: 'proj-3',
+    project: 'WQAC - Design & Dev',
+    taskId: 'task-3',
+    task: 'QA Support',
+    billable: 'Billable',
+    status: 'Rejected',
+    week: '23 Mar - 29 Mar 2026',
+    hours: ['8:00', '8:00', '8:00', '8:00', '4:00', '0:00', '0:00'],
+    comment: 'Incorrect allocation and missing comments.',
+    attachmentCount: 2,
+    updatedAt: '2026-03-29T16:10:00+05:30',
+  },
+];
+
+export function buildWeeklyEntryState(entries = timesheetWeeklyEntries) {
+  return entries.map((entry) => ({ ...entry }));
+}
+

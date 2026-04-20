@@ -1,0 +1,37 @@
+body.myteam-section-page{margin:0;font-family:'Inter',sans-serif;background:#eef2f7;min-height:100vh}
+body.myteam-section-page .myteam-content{padding:0}
+.myteam-section-page{width:100%;box-sizing:border-box;padding:0 0 18px;color:#1f2937}
+.myteam-section-page > *{width:100%;box-sizing:border-box}
+.myteam-section-header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:8px 0 12px}
+.myteam-section-title{margin:0;font-size:18px;line-height:1.2;color:#2b3340;font-weight:600}
+.myteam-section-subtitle{margin:6px 0 0;font-size:11px;color:#7b8796}
+.myteam-section-pill{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;background:#fff;border:1px solid #e5eaf2;font-size:11px;color:#6b7280;white-space:nowrap}
+.myteam-section-stack{display:flex;flex-direction:column;gap:14px}
+.myteam-section-grid{display:grid;gap:14px}
+.myteam-section-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.myteam-section-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.myteam-section-card{background:#fff;border:1px solid #e5eaf2;border-radius:2px;box-shadow:0 1px 0 rgba(18,22,33,.02);padding:12px 12px 14px}
+.myteam-section-card-title{font-size:16px;font-weight:500;color:#2b3340;margin-bottom:4px}
+.myteam-section-card-help{font-size:11px;color:#7b8796;margin-bottom:10px}
+.myteam-section-empty{display:flex;align-items:center;gap:8px;background:#dff6ff;border:1px solid #bfe9f5;border-radius:2px;color:#48606d;font-size:12px;padding:11px 12px}
+.myteam-section-empty-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:170px;text-align:center;color:#a0a8b7;background:#fff;border:1px solid #e5eaf2;border-radius:2px;padding:16px}
+.myteam-section-empty-panel svg{font-size:42px;color:#d5dae4;margin-bottom:10px}
+.myteam-section-empty-panel strong{font-size:15px;color:#8f98a7;font-weight:600}
+.myteam-section-empty-panel span{font-size:12px;color:#9aa4b2;max-width:380px;margin-top:4px}
+.myteam-section-table-card{background:#fff;border:1px solid #e5eaf2;border-radius:2px;overflow:hidden}
+.myteam-section-table{width:100%;border-collapse:collapse}
+.myteam-section-table th{background:#f8fafc;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#7b8796;font-weight:700;padding:12px 14px;border-bottom:1px solid #eef2f7;text-align:left;white-space:nowrap}
+.myteam-section-table td{padding:12px 14px;border-bottom:1px solid #f1f4f8;font-size:12px;color:#334155;vertical-align:top}
+.myteam-section-badge{display:inline-flex;align-items:center;justify-content:center;min-height:18px;padding:0 7px;border-radius:999px;font-size:9px;font-weight:700;letter-spacing:.04em}
+.myteam-section-badge.pending{background:#fef3c7;color:#a16207}
+.myteam-section-badge.success{background:#e7f7ef;color:#17724b}
+.myteam-section-badge.danger{background:#fde8e8;color:#c24141}
+.myteam-section-list{display:flex;flex-direction:column;gap:10px}
+.myteam-section-list-item{background:#fff;border:1px solid #e5eaf2;border-radius:2px;padding:12px 14px}
+.myteam-section-list-item-title{font-size:13px;font-weight:600;color:#334155}
+.myteam-section-list-item-sub{font-size:11px;color:#8b95a5;margin-top:4px}
+.myteam-section-toolbar{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e5eaf2;border-radius:2px;padding:8px 10px}
+.myteam-section-toolbar .date-pill{min-width:154px;justify-content:flex-start;display:inline-flex;align-items:center;gap:8px;padding:5px 10px;border:1px solid #e2e8f0;border-radius:2px;font-size:12px;font-weight:600;color:#334155}
+.myteam-section-toolbar .search-input{flex:1;min-width:0;border:0;outline:none;font:inherit;color:#334155;font-size:12px;background:transparent}
+@media (max-width:1180px){.myteam-section-grid.two,.myteam-section-grid.three{grid-template-columns:1fr}.myteam-section-header,.myteam-section-toolbar{flex-wrap:wrap}.myteam-section-toolbar .date-pill{min-width:0}.myteam-section-toolbar .search-input{width:100%;order:3}}
+@media (max-width:720px){.myteam-section-page{padding:0 8px 14px}.myteam-section-empty-panel{min-height:150px}}

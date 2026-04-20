@@ -1,0 +1,20 @@
+body.myteam-expenses-page{margin:0;font-family:'Inter',sans-serif;background:#eef2f7;min-height:100vh}
+body.myteam-expenses-page .myteam-content{padding:0}
+.myteam-expenses-page{width:100%;box-sizing:border-box;padding:0 0 18px}
+.myteam-expenses-page > *{width:100%;box-sizing:border-box}
+.myteam-expenses-scopebar{display:flex;align-items:center;gap:10px;padding:12px 0 10px}
+.scope-dropdown{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border:1px solid #cbb8ed;border-radius:2px;background:#f6f0ff;color:#5f4ca7;font-size:12px;font-weight:600;cursor:pointer}
+.scope-tabs{display:flex;align-items:center}
+.scope-tab{height:32px;padding:0 12px;border:1px solid #e5eaf2;background:#fff;color:#4b5563;font-size:12px;cursor:pointer}
+.scope-tab+.scope-tab{margin-left:-1px}
+.scope-tab.active{background:#f7f3ff;color:#4a4f8f;border-color:#d9d2f3}
+.myteam-expenses-summary{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:4px 0 12px}
+.myteam-expenses-summary h1{margin:0;font-size:18px;line-height:1.2;color:#2b3340;font-weight:600}
+.myteam-expenses-summary p{margin:6px 0 0;font-size:11px;color:#7b8796}
+.myteam-expenses-pill{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;background:#fff;border:1px solid #e5eaf2;font-size:11px;color:#6b7280;white-space:nowrap}
+.myteam-expenses-stack{display:flex;flex-direction:column;gap:14px}
+.myteam-expense-card{background:#fff;border:1px solid #e5eaf2;border-radius:2px;padding:12px 12px 14px;box-shadow:0 1px 0 rgba(18,22,33,.02)}
+.myteam-expense-card-title{font-size:16px;font-weight:500;color:#2b3340;margin-bottom:4px}
+.myteam-expense-card-help{font-size:11px;color:#7b8796;margin-bottom:10px}
+.myteam-expense-empty{display:flex;align-items:center;gap:8px;background:#dff6ff;border:1px solid #bfe9f5;border-radius:2px;color:#48606d;font-size:12px;padding:11px 12px}
+@media (max-width:900px){.myteam-expenses-scopebar,.myteam-expenses-summary{flex-direction:column;align-items:flex-start}.myteam-expenses-pill{white-space:normal}}

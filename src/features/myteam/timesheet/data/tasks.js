@@ -1,0 +1,36 @@
+export const timesheetTasks = [
+  {
+    id: 'task-1',
+    employeeId: 'emp-1',
+    task: 'Sprint Planning',
+    projectId: 'proj-1',
+    project: 'AHDMS - Open Source',
+    owner: 'Animesh Das',
+    dueDate: '17 Nov 2026',
+    hours: '65.00 hrs / 4 hrs',
+    status: 'Completed',
+  },
+  {
+    id: 'task-2',
+    employeeId: 'emp-2',
+    task: 'Implementation',
+    projectId: 'proj-2',
+    project: 'GCS - Ticketing System',
+    owner: 'Bhasha Mishra',
+    dueDate: '31 Mar 2026',
+    hours: '0 hrs / 50 hrs',
+    status: 'Not Started',
+  },
+  {
+    id: 'task-3',
+    employeeId: 'emp-3',
+    task: 'QA Support',
+    projectId: 'proj-3',
+    project: 'WQAC - Design & Dev',
+    owner: 'Bijay Kumar Sahoo',
+    dueDate: '28 Feb 2026',
+    hours: '50.00 hrs / NA',
+    status: 'In Progress',
+  },
+];
+

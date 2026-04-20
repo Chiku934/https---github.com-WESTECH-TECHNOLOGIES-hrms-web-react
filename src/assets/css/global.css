@@ -1,0 +1,148 @@
+html,
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+html {
+  font-size: 13px;
+}
+
+body {
+  margin: 0;
+  background: #eef2f7;
+  min-height: 100vh;
+  color: #1f2937;
+  line-height: 1.45;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.hotkey-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  background: #f1edf9;
+  color: #686d7d;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Layout adjustments for Keka-style sidebar */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 260px;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.sidebar.collapsed ~ .main-content {
+  margin-left: 80px;
+}
+
+.sidebar.collapsed ~ .myteam-main {
+  margin-left: 80px;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 80px;
+  }
+  
+  .sidebar.expanded ~ .main-content {
+    margin-left: 260px;
+  }
+}
+
+/* Header adjustments */
+.main-header {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+/* Content area */
+.content-wrapper {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Cards */
+.keka-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease;
+}
+
+.keka-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Badges */
+.keka-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.keka-badge--primary {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.keka-badge--success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.keka-badge--warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.keka-badge--danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
