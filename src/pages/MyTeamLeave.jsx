@@ -124,7 +124,7 @@ function Shell({ children, activeKey, subNavActiveKey }) {
       activeKey={activeKey}
       moduleActiveKey="myteam_leave_overview"
       subNavActiveKey={subNavActiveKey}
-      brandText="PLAT"
+      brandText="HRPulse"
       companyText=""
       showModuleNav
       showSubNav

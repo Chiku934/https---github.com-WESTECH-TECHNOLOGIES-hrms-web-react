@@ -156,7 +156,7 @@ export default function MyTeamExpenses() {
       activeKey={sidebarActiveKey}
       moduleActiveKey="myteam_expenses"
       subNavActiveKey={sidebarActiveKey}
-      brandText="PLAT"
+      brandText="HRPulse"
       companyText=""
       showModuleNav
       showSubNav

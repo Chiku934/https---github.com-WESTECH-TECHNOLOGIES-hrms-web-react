@@ -7,7 +7,7 @@ export default function MainLayout({
   activeKey = 'dashboard',
   moduleActiveKey = activeKey,
   subNavActiveKey = activeKey,
-  brandText = 'PLAT',
+  brandText = 'HRPulse',
   companyText = '',
   showModuleNav = true,
   showSubNav = false,

@@ -25,7 +25,7 @@ function NavTarget({ item, children, className = '' }) {
 }
 
 export default function Header({
-  brandText = 'PLAT',
+  brandText = 'HRPulse',
   companyText = '',
   activeKey = 'dashboard',
   moduleActiveKey = activeKey,

@@ -189,7 +189,7 @@ function SummaryShell({ children, activeKey, scopeKey }) {
       activeKey={activeKey}
       moduleActiveKey="myteam_summary"
       subNavActiveKey={scopeKey}
-      brandText="PLAT"
+      brandText="HRPulse"
       companyText=""
       showModuleNav
       showSubNav={false}

@@ -28,7 +28,7 @@ export default function DashboardShell({
         hiddenSubmenuKeys={hiddenSidebarSubmenuKeys}
       />
       <div className="dashboard-main">
-        <Header brandText="PLAT" showModuleNav={false} {...headerProps} />
+        <Header brandText="HRPulse" showModuleNav={false} {...headerProps} />
         <div key={`${location.pathname}${location.search}${location.hash}`} className="dashboard-content dashboard-content-transition">
           {children}
         </div>

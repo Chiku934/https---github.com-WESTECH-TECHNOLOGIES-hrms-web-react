@@ -763,7 +763,7 @@ export default function MyTeamAttendance() {
       activeKey={sidebarActiveKey}
       moduleActiveKey="myteam_attendance"
       subNavActiveKey={sidebarActiveKey}
-      brandText="PLAt"
+      brandText="HRPulse"
       companyText=""
       showModuleNav
       showSubNav

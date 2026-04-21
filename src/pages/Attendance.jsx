@@ -249,7 +249,7 @@ export default function Attendance() {
       <div className="attendance-main">
         <div className="attendance-topbar">
           <div className="attendance-brand">
-            <div className="attendance-brand-mark">PLAT</div>
+            <div className="attendance-brand-mark">HRPulse</div>
             <div className="attendance-company" />
           </div>
           <div className="attendance-search">

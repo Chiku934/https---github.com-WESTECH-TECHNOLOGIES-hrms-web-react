@@ -183,7 +183,7 @@ export default function MyTeamHiring() {
       activeKey={activeTabInfo.activeKey}
       moduleActiveKey="myteam_hiring"
       subNavActiveKey={activeTabInfo.activeKey}
-      brandText="PLAT"
+      brandText="HRPulse"
       companyText=""
       showModuleNav
       showSubNav

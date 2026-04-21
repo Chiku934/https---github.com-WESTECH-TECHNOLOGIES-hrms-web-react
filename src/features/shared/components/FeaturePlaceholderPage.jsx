@@ -9,7 +9,7 @@ export default function FeaturePlaceholderPage({
   subNavItems,
   showModuleNav = false,
   showSubNav = false,
-  brandText = 'PLAT',
+  brandText = 'HRPulse',
   companyText = '',
 }) {
   return (

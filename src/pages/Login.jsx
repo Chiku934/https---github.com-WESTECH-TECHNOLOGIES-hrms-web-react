@@ -86,7 +86,7 @@ export default function Login() {
         <section className="login-card" aria-label="Login form">
           <div className="login-card-top">
             <div>
-              <div className="login-title">WELCOME BACK PLAT</div>
+              <div className="login-title">WELCOME BACK HRPulse</div>
               <div className="login-subtitle">Sign in to continue to your dashboard.</div>
             </div>
           </div>

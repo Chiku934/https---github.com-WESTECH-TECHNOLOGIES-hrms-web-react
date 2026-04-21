@@ -32,7 +32,7 @@ export const hrEmployeeList = [
     designation: 'HR Executive',
     role: 'HR',
     status: 'Active',
-    email: 'mamata@plat.com',
+    email: 'mamata@hrpulse.com',
     contact: '9876543210',
   },
   {
@@ -44,7 +44,7 @@ export const hrEmployeeList = [
     designation: 'Senior Associate',
     role: 'Employee',
     status: 'Active',
-    email: 'ramesh@plat.com',
+    email: 'ramesh@hrpulse.com',
     contact: '9123456780',
   },
   {
@@ -56,7 +56,7 @@ export const hrEmployeeList = [
     designation: 'Team Lead',
     role: 'Team Lead',
     status: 'Onboarding',
-    email: 'priya@plat.com',
+    email: 'priya@hrpulse.com',
     contact: '9001234567',
   },
   {
@@ -68,7 +68,7 @@ export const hrEmployeeList = [
     designation: 'Developer',
     role: 'Employee',
     status: 'Inactive',
-    email: 'amit@plat.com',
+    email: 'amit@hrpulse.com',
     contact: '9898989898',
   },
 ];

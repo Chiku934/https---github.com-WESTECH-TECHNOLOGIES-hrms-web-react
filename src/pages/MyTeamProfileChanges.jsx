@@ -109,7 +109,7 @@ export default function MyTeamProfileChanges() {
       activeKey={activeTabInfo.activeKey}
       moduleActiveKey="myteam_profile_changes"
       subNavActiveKey={activeTabInfo.activeKey}
-      brandText="PLAT"
+      brandText="HRPulse"
       companyText=""
       showModuleNav
       showSubNav

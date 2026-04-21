@@ -871,7 +871,7 @@ export default function MyTeamTimesheet() {
   const tabView = activeTab === 'project-time' ? projectView : activeTab === 'week-summary' ? summaryView : activeTab === 'exceptions' ? exceptionView : approvalsView;
 
   return (
-    <MainLayout activeKey={sidebarActiveKeyMap[activeTab] || sidebarActiveKeyMap.approvals} moduleActiveKey="myteam_timesheet" subNavActiveKey={sidebarActiveKeyMap[activeTab] || sidebarActiveKeyMap.approvals} brandText="PLAT" companyText="" showModuleNav showSubNav moduleNavItems={moduleNavItems} subNavItems={subNavItems}>
+    <MainLayout activeKey={sidebarActiveKeyMap[activeTab] || sidebarActiveKeyMap.approvals} moduleActiveKey="myteam_timesheet" subNavActiveKey={sidebarActiveKeyMap[activeTab] || sidebarActiveKeyMap.approvals} brandText="HRPulse" companyText="" showModuleNav showSubNav moduleNavItems={moduleNavItems} subNavItems={subNavItems}>
       <div className="myteam-timesheet-page">
         <header className="timesheet-hero myteam-timesheet-hero">
           <div className="timesheet-hero-copy">

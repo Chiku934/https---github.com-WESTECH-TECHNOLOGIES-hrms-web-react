@@ -297,13 +297,13 @@ export default function Sidebar({
         <div className="sidebar-brand">
           {isSidebarExpanded ? (
             <>
-              <div className="sidebar-brand-logo">P</div>
+              <div className="sidebar-brand-logo">HR</div>
               <div className="sidebar-brand-text">
-                <span className="sidebar-brand-title">PLAT</span>
+                <span className="sidebar-brand-title">HRPulse</span>
               </div>
             </>
           ) : (
-            <div className="sidebar-brand-logo">P</div>
+            <div className="sidebar-brand-logo">HR</div>
           )}
         </div>
         <button 

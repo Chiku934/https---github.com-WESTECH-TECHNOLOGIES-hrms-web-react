@@ -178,7 +178,7 @@ export default function MyTeamPerformance() {
       activeKey={activeTabInfo.activeKey}
       moduleActiveKey="myteam_performance"
       subNavActiveKey={activeTabInfo.activeKey}
-      brandText="PLAT"
+      brandText="HRPulse"
       companyText=""
       showModuleNav
       showSubNav
