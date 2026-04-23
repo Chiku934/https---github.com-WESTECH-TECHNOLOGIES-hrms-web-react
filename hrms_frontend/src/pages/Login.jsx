@@ -4,14 +4,13 @@ import Icon from '../components/Icon';
 
 const DEMO_USERS = {
   'super-admin': { email: 'superadmin@hrms.com', password: '1234', redirectTo: '/dashboard', label: 'Super Admin' },
-  'sub-admin': { email: 'subadmin@hrms.com', password: '1234', redirectTo: '/dashboard', label: 'Sub Admin' },
-  'company-admin': { email: 'companyadmin@hrms.com', password: '1234', redirectTo: '/dashboard', label: 'Company Admin' },
-  hr: { email: 'hr@hrms.com', password: '1234', redirectTo: '/dashboard', label: 'HR' },
-  manager: { email: 'manager@hrms.com', password: '1234', redirectTo: '/dashboard', label: 'Manager' },
+  'hr-manager': { email: 'hrmanager@hrms.com', password: '1234', redirectTo: '/dashboard', label: 'HR Manager' },
+  'hr-executive': { email: 'hrexecutive@hrms.com', password: '1234', redirectTo: '/dashboard', label: 'HR Executive' },
+  'team-lead': { email: 'teamlead@hrms.com', password: '1234', redirectTo: '/dashboard', label: 'Team Lead' },
   employee: { email: 'employee@hrms.com', password: '1234', redirectTo: '/dashboard', label: 'Employee' },
 };
 
-const DEFAULT_ROLE = 'company-admin';
+const DEFAULT_ROLE = 'hr-manager';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -153,8 +152,14 @@ export default function Login() {
               <button type="button" onClick={() => handleQuickFill('super-admin')}>
                 Login as Super Admin
               </button>
-              <button type="button" onClick={() => handleQuickFill('company-admin')}>
-                Login as Company Admin
+              <button type="button" onClick={() => handleQuickFill('hr-manager')}>
+                Login as HR Manager
+              </button>
+              <button type="button" onClick={() => handleQuickFill('hr-executive')}>
+                Login as HR Executive
+              </button>
+              <button type="button" onClick={() => handleQuickFill('team-lead')}>
+                Login as Team Lead
               </button>
               <button type="button" onClick={() => handleQuickFill('employee')}>
                 Login as Employee

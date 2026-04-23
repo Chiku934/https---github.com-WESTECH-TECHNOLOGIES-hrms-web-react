@@ -21,7 +21,7 @@ export function getUserSetupSectionTitle(tab, isEditing = false, role = ROLES.EM
     return companyAdminLabels[tab] || 'Employee Management';
   }
 
-  if (role === ROLES.HR) {
+  if (role === ROLES.HR_MANAGER || role === ROLES.HR_EXECUTIVE) {
     const hrLabels = {
       overview: 'HR Management',
       users: 'Employee Directory',
@@ -239,7 +239,8 @@ export function getRoleDescription(role) {
       return 'Controlled access for user management and permission review.';
     case ROLES.COMPANY_ADMIN:
       return 'Company-wide employee setup with operational controls.';
-    case ROLES.HR:
+    case ROLES.HR_MANAGER:
+    case ROLES.HR_EXECUTIVE:
       return 'HR-focused profile management with documents and address records.';
     case ROLES.MANAGER:
       return 'Team-focused workspace for project leaders and approvals.';

@@ -397,7 +397,8 @@ export const roleSidebarSections = {
   [ROLES.SUPER_ADMIN]: superAdminSections,
   [ROLES.SUB_ADMIN]: subAdminSections,
   [ROLES.COMPANY_ADMIN]: companyAdminSections,
-  [ROLES.HR]: hrSections,
+  [ROLES.HR_MANAGER]: hrSections,
+  [ROLES.HR_EXECUTIVE]: hrSections,
   [ROLES.MANAGER]: managerSections,
   [ROLES.EMPLOYEE]: employeeSections,
 };

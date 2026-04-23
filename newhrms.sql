@@ -383,9 +383,10 @@ INSERT INTO `roles` (`id`, `company_id`, `name`, `description`, `is_system`, `cr
 (2, 1, 'HR Manager', 'Manages employees and documents', 0, '2026-04-22 08:17:49'),
 (3, 1, 'Team Lead', 'Approves leaves for team', 0, '2026-04-22 08:17:49'),
 (4, 1, 'Employee', 'Self-service access', 1, '2026-04-22 08:17:49'),
-(5, 2, 'Super Admin', 'Full access to everything', 1, '2026-04-22 08:17:49'),
-(6, 2, 'HR Executive', 'HR operations', 0, '2026-04-22 08:17:49'),
-(7, 2, 'Employee', 'Self-service access', 1, '2026-04-22 08:17:49');
+(5, 1, 'HR Executive', 'HR operations and daily tasks', 0, '2026-04-22 08:17:49'),
+(6, 2, 'Super Admin', 'Full access to everything', 1, '2026-04-22 08:17:49'),
+(7, 2, 'HR Executive', 'HR operations', 0, '2026-04-22 08:17:49'),
+(8, 2, 'Employee', 'Self-service access', 1, '2026-04-22 08:17:49');
 
 -- --------------------------------------------------------
 
@@ -518,9 +519,11 @@ INSERT INTO `user_roles` (`company_user_id`, `role_id`, `assigned_at`, `assigned
 (3, 4, '2026-04-22 08:17:49', NULL),
 (4, 4, '2026-04-22 08:17:49', NULL),
 (5, 4, '2026-04-22 08:17:49', NULL),
-(6, 5, '2026-04-22 08:17:49', NULL),
-(7, 6, '2026-04-22 08:17:49', NULL),
-(8, 7, '2026-04-22 08:17:49', NULL);
+-- Add HR Executive for Company 1 (assign to user 2 as additional role or create new user)
+(2, 5, '2026-04-22 08:17:49', NULL),
+(6, 6, '2026-04-22 08:17:49', NULL),
+(7, 7, '2026-04-22 08:17:49', NULL),
+(8, 8, '2026-04-22 08:17:49', NULL);
 
 --
 -- Indexes for dumped tables

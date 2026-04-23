@@ -107,7 +107,8 @@ export const roleNavigation = {
   superAdmin: superAdminNav,
   subAdmin: subAdminNav,
   companyAdmin: companyAdminNav,
-  hr: hrNav,
+  'hr-manager': hrNav,
+  'hr-executive': hrNav,
   manager: managerNav,
   employee: employeeNav,
 };
@@ -593,7 +594,65 @@ export const roleSidebarSections = {
       ],
     },
   ],
-  [ROLES.HR]: [
+  [ROLES.HR_MANAGER]: [
+    {
+      key: 'dashboard',
+      label: 'Dashboard',
+      icon: 'house',
+      activeKeys: ['dashboard'],
+      items: [{ label: 'Overview', path: ROUTES.dashboard, activeKey: 'dashboard' }],
+    },
+    {
+      key: 'user-setup',
+      label: 'User Setup',
+      icon: 'user',
+      activeKeys: ['user-setup'],
+      items: [{ label: 'User Setup', path: ROUTES.userSetup, activeKey: 'user-setup' }],
+    },
+    {
+      key: 'employees',
+      label: 'Employee Management',
+      icon: 'users',
+      activeKeys: ['hr-employee-management'],
+      items: [{ label: 'Employee List', path: ROUTES.hrEmployeeManagement, activeKey: 'hr-employee-management' }],
+    },
+    {
+      key: 'master',
+      label: 'Master',
+      icon: 'clipboard',
+      activeKeys: ['hr-master'],
+      items: [{ label: 'Department and Designation', path: ROUTES.hrMaster, activeKey: 'hr-master' }],
+    },
+    {
+      key: 'leave',
+      label: 'Leave Management',
+      icon: 'calendar',
+      activeKeys: ['hr-leave-management'],
+      items: [{ label: 'Leave Overview', path: ROUTES.hrLeaveManagement, activeKey: 'hr-leave-management' }],
+    },
+    {
+      key: 'attendance',
+      label: 'Attendance',
+      icon: 'clock',
+      activeKeys: ['hr-attendance'],
+      items: [{ label: 'Attendance', path: ROUTES.hrAttendance, activeKey: 'hr-attendance' }],
+    },
+    {
+      key: 'project',
+      label: 'Project Management',
+      icon: 'briefcase',
+      activeKeys: ['hr-project-management'],
+      items: [{ label: 'Project Management', path: ROUTES.hrProjectManagement, activeKey: 'hr-project-management' }],
+    },
+    {
+      key: 'reports',
+      label: 'Reports',
+      icon: 'chart-line',
+      activeKeys: ['hr-reports'],
+      items: [{ label: 'Reports', path: ROUTES.hrReports, activeKey: 'hr-reports' }],
+    },
+  ],
+  [ROLES.HR_EXECUTIVE]: [
     {
       key: 'dashboard',
       label: 'Dashboard',
@@ -659,7 +718,8 @@ export const roleTopNavItems = {
   [ROLES.SUPER_ADMIN]: superAdminNav,
   [ROLES.SUB_ADMIN]: subAdminNav,
   [ROLES.COMPANY_ADMIN]: companyAdminNav,
-  [ROLES.HR]: hrNav,
+  [ROLES.HR_MANAGER]: hrNav,
+  [ROLES.HR_EXECUTIVE]: hrNav,
   [ROLES.MANAGER]: managerNav,
   [ROLES.EMPLOYEE]: employeeNav,
 };
@@ -675,7 +735,8 @@ export function resolveRoleFromStorage() {
     case ROLES.SUPER_ADMIN:
     case ROLES.SUB_ADMIN:
     case ROLES.COMPANY_ADMIN:
-    case ROLES.HR:
+    case ROLES.HR_MANAGER:
+    case ROLES.HR_EXECUTIVE:
     case ROLES.MANAGER:
     case ROLES.EMPLOYEE:
       return storedRole;

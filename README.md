@@ -1,19 +1,70 @@
-# HRMS Setup Guide
+# HRMS Next-Step Plan
 
-This project is an HRMS frontend and backend that is being moved to a real SQL database workflow.
-The database script you imported in phpMyAdmin is the foundation for the next phase of the build.
+This repository is an HRMS project that now has a mostly database-backed backend and a frontend that still contains some demo/localStorage flows.
 
-## What This Setup Covers
+The next goal is to finish frontend integration against the real backend, then close the remaining gaps so the app behaves like a single working product.
 
-- MySQL or MariaDB database import through phpMyAdmin
-- Backend setup with Node.js, Express, and Prisma
-- Frontend setup with Vite and React
-- Clear mapping between the database tables and the app features
-- A practical AI-assisted workflow to speed up implementation
+## Current Status
 
-## Database Structure
+### What is already in place
 
-The SQL file defines the core HRMS tables:
+- MySQL/MariaDB database schema is available in `newhrms.sql`
+- Backend uses Prisma with MySQL/MariaDB
+- Main backend entities already have controllers and routes:
+  - auth
+  - users
+  - company users
+  - employees
+  - employee profiles
+  - employee assignments
+  - departments
+  - designations
+  - roles
+  - permissions
+  - role permissions
+  - user roles
+  - custom fields
+  - document types
+  - audit logs
+- Backend starts successfully from `hrms_backend/`
+- Frontend production build completes successfully
+
+### What is still not fully finished
+
+- Frontend login is still demo-based in some places
+- User setup still uses localStorage in some places
+- Role display and navigation still depend on localStorage
+- Employee document upload/manage flow is not fully exposed as a dedicated API module yet
+- Some README instructions were outdated and pointed to old folder names or old mock flow
+
+## Next Goal
+
+Make the frontend use the backend as the source of truth for:
+
+- login
+- current user profile
+- users
+- employees
+- departments
+- designations
+- roles
+- permissions
+- audit logs
+- user setup data
+
+## What We Should Complete First
+
+1. Keep the backend stable.
+2. Replace frontend demo flows with API calls.
+3. Connect one screen at a time.
+4. Verify each screen after reload.
+5. Only then add the remaining document/upload and polish work.
+
+## Database Source
+
+Use `newhrms.sql` as the base schema and seed source.
+
+Important tables:
 
 - `companies`
 - `users`
@@ -31,245 +82,208 @@ The SQL file defines the core HRMS tables:
 - `employee_documents`
 - `audit_logs`
 
-After import, these tables should become the source of truth for login, user setup, employee data, documents, departments, and RBAC.
+## Backend Readiness Check
 
-## Step 1: Import the Database
+Before frontend integration, confirm these backend points:
 
-1. Open phpMyAdmin.
-2. Create a database named `hrms` or your preferred project name.
-3. Import `hrms.sql`.
-4. Confirm that all tables were created successfully.
-5. Check that sample rows exist in:
-   - `companies`
-   - `users`
-   - `company_users`
-   - `roles`
-   - `permissions`
-   - `employee_profiles`
-   - `employee_assignments`
-   - `employee_documents`
+- `npm run dev` works from `hrms_backend/`
+- `/api/health` responds correctly
+- `/api/auth/login` returns token and user payload
+- `/api/auth/me` returns the authenticated user
+- `/api/employees` returns company-scoped employee data
+- `/api/departments` and `/api/designations` return master data
+- `/api/users` works for the intended roles
+- `/api/roles`, `/api/permissions`, `/api/user-roles`, and `/api/role-permissions` work
+- `/api/audit-logs` is available for tracking actions
 
-## Step 2: Prepare the Backend
+## AI-Assisted Work Plan
 
-Go to the backend folder:
+Use AI one step at a time. Do not ask it to change the whole app in one prompt.
 
-```bash
-cd backend
-```
+### Phase 1: Lock the backend contract
 
-Install dependencies if needed:
+Goal: make sure frontend integration has a stable API shape.
 
-```bash
-npm install
-```
+Tasks:
 
-Create or update your `.env` file in `backend/`:
+1. Verify response format for auth
+2. Verify response format for employee list
+3. Verify response format for departments and designations
+4. Verify response format for users and roles
+5. List the missing endpoints that the frontend still needs
 
-```env
-PORT=5000
-NODE_ENV=development
-CORS_ORIGIN=http://localhost:5173
-JWT_SECRET=your_super_secret_key
-JWT_EXPIRES_IN=7d
-DATABASE_URL=mysql://root:password@127.0.0.1:3306/hrms
-```
+AI prompt examples:
 
-Notes:
+- "Inspect the backend auth and employee controllers and summarize the exact JSON response shapes."
+- "List the missing endpoints needed for frontend integration based on the current API layer."
 
-- Use the correct MySQL or MariaDB username and password.
-- Update the database name if you used something other than `hrms`.
-- If you use a different frontend port, update `CORS_ORIGIN`.
+### Phase 2: Replace frontend login
 
-## Step 3: Align Prisma With the SQL Schema
+Goal: stop using hardcoded demo users.
 
-The backend currently has a Prisma setup, but it still needs to be aligned to the real MySQL schema.
+Tasks:
 
-What to do:
+1. Replace demo login logic in `hrms_frontend/src/pages/Login.jsx`
+2. Call `/api/auth/login`
+3. Save token and role from backend response
+4. Redirect based on the returned role
+5. Show API error messages clearly
 
-1. Set Prisma datasource to MySQL.
-2. Create Prisma models for the SQL tables.
-3. Generate the Prisma client.
-4. Verify Prisma can connect to the database.
+AI prompt example:
 
-Recommended table mapping:
+- "Rewrite the login page to use the real auth API and preserve the current UI behavior."
 
-- `users` -> authentication identity
-- `company_users` -> tenant membership
-- `roles`, `permissions`, `role_permissions`, `user_roles` -> RBAC
-- `employee_profiles` -> personal profile details
-- `employee_assignments` -> department, designation, manager, location
-- `departments` and `designations` -> master data
-- `document_types` and `employee_documents` -> document handling
-- `custom_fields` -> dynamic fields
-- `audit_logs` -> traceability
+### Phase 3: Replace localStorage user setup
 
-## Step 4: Replace Mock Backend Logic
+Goal: make user setup data come from the backend.
 
-Right now the backend controllers are mock-based.
-Replace them with database queries in this order:
+Tasks:
 
-1. `authController`
-   - Login against `users`
-   - Resolve company membership from `company_users`
-   - Load role data from `user_roles` and `roles`
+1. Replace `loadUserSetupUsers`
+2. Replace `saveUserSetupUsers`
+3. Replace `loadUserSetupDocuments`
+4. Replace `saveUserSetupDocuments`
+5. Replace `loadUserSetupAddresses`
+6. Replace `saveUserSetupAddresses`
+7. Read/write through API calls instead of browser storage
 
-2. `employeeController`
-   - Read from `employee_profiles`
-   - Read current assignment from `employee_assignments`
-   - Join `departments` and `designations`
-   - Write create/update/delete actions back to the database
+AI prompt example:
 
-3. Middleware
-   - Keep JWT authentication
-   - Add company-based filtering
-   - Add role-based authorization from the database
+- "Convert the user setup service from localStorage to API-based data fetching and saving."
 
-4. Audit logging
-   - Write important changes to `audit_logs`
+### Phase 4: Connect employee management
 
-## Step 5: Start the Backend
+Goal: use backend employee data everywhere.
 
-From `backend/`:
+Tasks:
 
-```bash
-npm run dev
-```
+1. Load employee list from `/api/employees`
+2. Load employee detail from `/api/employees/:id`
+3. Create employees through backend
+4. Update employees through backend
+5. Delete employees through backend
+6. Refresh list after every change
 
-Expected checks:
+AI prompt example:
 
-- Backend starts on `http://localhost:5000`
-- Health endpoint works at `http://localhost:5000/api/health`
-- Swagger loads at `http://localhost:5000/swagger`
+- "Update the employee management screen to use the backend API and keep the current table and form UI."
 
-## Step 6: Prepare the Frontend
+### Phase 5: Connect master data screens
 
-Go to the project root:
+Goal: departments and designations should come from the database.
 
-```bash
-cd ..
-```
+Tasks:
 
-Install dependencies if needed:
+1. Replace static department data
+2. Replace static designation data
+3. Use backend create/update/delete endpoints
+4. Reuse one shared API pattern for both screens
 
-```bash
-npm install
-```
+AI prompt example:
 
-Start the frontend:
+- "Refactor department and designation screens to use the real backend endpoints with minimal UI changes."
 
-```bash
-npm run dev
-```
+### Phase 6: Role and navigation cleanup
 
-Expected checks:
+Goal: stop relying on localStorage for role state where possible.
 
-- Frontend runs on `http://localhost:5173`
-- Login page opens correctly
-- Role-based navigation loads without errors
+Tasks:
 
-## Step 7: Replace Local Storage in User Setup
+1. Use `/api/auth/me` to resolve the current role
+2. Store only the token locally
+3. Derive navigation from backend user data
+4. Keep localStorage only as a fallback during migration
 
-The user setup screen currently stores data in browser local storage.
-That is fine for mock mode, but for a real SQL setup it should become API-driven.
+AI prompt example:
 
-Replace these pieces:
+- "Replace frontend role detection with backend-driven auth state while preserving current navigation behavior."
 
-- `loadUserSetupUsers`
-- `saveUserSetupUsers`
-- `loadUserSetupDocuments`
-- `saveUserSetupDocuments`
-- `loadUserSetupAddresses`
-- `saveUserSetupAddresses`
+### Phase 7: Document flow
 
-Recommended API pattern:
+Goal: finish document-related functionality.
 
-- `GET /api/users`
-- `POST /api/users`
-- `PUT /api/users/:id`
-- `DELETE /api/users/:id`
-- `GET /api/employees`
-- `GET /api/employees/:id`
-- `POST /api/employees`
-- `PUT /api/employees/:id`
-- `DELETE /api/employees/:id`
+Tasks:
 
-## Step 8: Connect the Frontend to the Backend
+1. Confirm whether an employee document CRUD/upload endpoint is needed
+2. Add the missing backend route if required
+3. Connect frontend document forms to the API
+4. Attach documents to the correct company user and company
 
-Use the backend as the source of truth for:
+AI prompt example:
 
-- login
-- user creation
-- employee setup
-- document upload
-- department and designation selection
-- role display
+- "Check the current schema and backend routes, then design the missing employee document API and frontend integration path."
 
-Recommended implementation order:
+### Phase 8: Validation and audit
 
-1. Build a small API client layer.
-2. Replace static data in one screen at a time.
-3. Verify data refresh after reload.
-4. Add loading and error states.
-5. Add form validation before submit.
+Goal: make sure changes are safe and traceable.
 
-## Step 9: Verification Checklist
+Tasks:
 
-After setup, verify these items one by one:
+1. Add loading states
+2. Add error states
+3. Add form validation
+4. Confirm data persists after reload
+5. Confirm audit logs are written for important actions
 
-- Database import completes with no SQL errors
-- `users` table contains the sample login identities
-- Login works from the frontend
-- JWT token is returned from the backend
-- Employee list comes from the database
-- User setup create/edit/delete persists after refresh
-- Departments and designations are read from the database
-- Documents are linked to the right user and company
-- Role-based access is enforced
-- Audit logs are created for important actions
+AI prompt example:
 
-## Suggested Build Order
+- "Add validation and error handling to the current frontend API integration without changing the layout."
 
-1. Import `hrms.sql` into phpMyAdmin.
-2. Confirm the sample data is present.
-3. Configure backend `.env`.
-4. Wire Prisma to MySQL.
-5. Replace mock auth and employee controllers.
-6. Move user setup from local storage to API calls.
-7. Connect master data screens to the database.
-8. Add audit logging.
-9. Test the complete login and user setup flow.
+## Suggested Implementation Order
 
-## AI-Assisted Workflow
+1. Confirm backend response shapes
+2. Replace login page demo flow
+3. Replace user setup localStorage
+4. Connect employee list and employee form
+5. Connect departments and designations
+6. Improve role-based navigation
+7. Finish document API flow
+8. Add audit and validation polish
 
-If you want to use AI effectively on this project, break the work into small tasks.
+## Acceptance Checklist
 
-Good AI tasks:
+You are close to the next goal when these are true:
 
-- "Map the `hrms.sql` tables to Prisma models"
-- "Rewrite auth controller to use MySQL tables"
-- "Convert user setup local storage to API requests"
-- "Add employee create/update endpoints"
-- "Add audit logging for user and employee changes"
-- "Generate a validation checklist for this schema"
+- Login uses the backend
+- Token is returned from the backend
+- Current user profile comes from `/api/auth/me`
+- User setup data persists through the backend
+- Employee list reloads from the database
+- Department and designation data come from the database
+- Logout clears frontend auth state cleanly
+- Role-based navigation matches backend role data
+- Audit logs are available for important changes
 
-Best practice:
+## Practical AI Workflow
 
-1. Give AI one bounded task at a time.
-2. Share the exact table names and file names.
-3. Ask for small, testable changes.
-4. Verify each step before moving to the next.
+For every AI task:
 
-## Current Project Status
+1. Give one file or one feature at a time
+2. Mention the exact route or table names
+3. Ask for a small change set
+4. Test after each step
+5. Move to the next screen only after the previous one works
 
-At the moment, the project still contains mock backend logic and local storage-based frontend state in some areas.
-That means the SQL import is only the first step.
-The next important milestone is to wire the backend and frontend to the imported tables.
+Good AI task sizes:
 
-## Next Milestone
+- "Convert login to API"
+- "Convert user setup storage to API"
+- "Connect employee list"
+- "Connect department master data"
+- "Add missing document endpoint"
 
-Once the SQL import is complete, the next recommended action is:
+## Important Notes
 
-1. Finalize Prisma models for the imported tables.
-2. Replace mock controllers with database queries.
-3. Connect the user setup screen to the backend API.
+- Treat `newhrms.sql` as the source of truth for the database
+- Treat `hrms_backend/` as the backend project root
+- Treat `hrms_frontend/` as the frontend project root
+- Do not mix the old mock flow with the new API flow unless you are intentionally migrating one screen at a time
+
+## Recommended Next Step
+
+If you want to move fast and safely, do this next:
+
+1. Replace frontend login with the backend auth API
+2. Replace user setup localStorage with API calls
+3. Connect employee and master data screens
 

@@ -14,8 +14,8 @@ const normalizeRole = (dbRoleName) => {
   const roleMap = {
     // Database role names -> Application role codes
     'Super Admin': 'super-admin',
-    'HR Manager': 'hr',
-    'HR Executive': 'hr',
+    'HR Manager': 'hr-manager',
+    'HR Executive': 'hr-executive',
     'Team Lead': 'manager',
     'Employee': 'employee',
     // Add any other database role names as needed
@@ -65,7 +65,8 @@ const getPrimaryRole = (dbRoleNames) => {
   const priorityOrder = [
     'super-admin',
     'company-admin',
-    'hr',
+    'hr-manager',
+    'hr-executive',
     'manager',
     'employee'
   ];
@@ -104,7 +105,8 @@ const getRoleLabel = (roleCode) => {
   const labelMap = {
     'super-admin': 'Super Admin',
     'company-admin': 'Company Admin',
-    'hr': 'HR',
+    'hr-manager': 'HR Manager',
+    'hr-executive': 'HR Executive',
     'manager': 'Manager',
     'employee': 'Employee',
     'sub-admin': 'Sub Admin',

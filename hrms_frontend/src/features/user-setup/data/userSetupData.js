@@ -3,7 +3,7 @@ import { ROLES } from '../../../app/config/roles';
 export const userSetupStatusOptions = ['Active', 'Pending', 'Inactive'];
 export const userSetupGenderOptions = ['Male', 'Female', 'Other'];
 export const userSetupBloodGroupOptions = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-export const userSetupRoleOptions = [ROLES.SUPER_ADMIN, ROLES.SUB_ADMIN, ROLES.COMPANY_ADMIN, ROLES.HR, ROLES.MANAGER, ROLES.EMPLOYEE];
+export const userSetupRoleOptions = [ROLES.SUPER_ADMIN, ROLES.SUB_ADMIN, ROLES.COMPANY_ADMIN, ROLES.HR_MANAGER, ROLES.HR_EXECUTIVE, ROLES.MANAGER, ROLES.EMPLOYEE];
 export const userSetupUserTypeOptions = [
   { value: '1', label: 'Super Admin' },
   { value: '2', label: 'Sub Admin' },
@@ -201,7 +201,7 @@ export const userSetupUsers = [
     leavingDate: '',
     bannerImage: '',
     status: 'Active',
-    role: ROLES.HR,
+    role: ROLES.HR_MANAGER,
     parentUser: 'u-003',
     createdDate: '2026-04-02',
     updatedDate: '2026-04-04',
