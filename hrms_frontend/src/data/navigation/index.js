@@ -5,6 +5,7 @@ import { companyAdminNav } from './companyAdminNav';
 import { hrNav } from './hrNav';
 import { employeeNav } from './employeeNav';
 import { ROLES } from '../../app/config/roles';
+import { resolveCurrentRole as resolveCurrentRoleFromAuthService } from '../../services/authService';
 
 const managerNav = [
   { label: 'Dashboard', path: ROUTES.dashboard, activeKey: 'dashboard' },
@@ -724,6 +725,11 @@ export const roleTopNavItems = {
   [ROLES.EMPLOYEE]: employeeNav,
 };
 
+/**
+ * Synchronously resolve role from localStorage (legacy function for backward compatibility)
+ * This function provides immediate role resolution for components that need synchronous access.
+ * For fresh role data from backend, use resolveCurrentRoleAsync() instead.
+ */
 export function resolveRoleFromStorage() {
   if (typeof window === 'undefined') {
     return ROLES.EMPLOYEE;
@@ -746,5 +752,38 @@ export function resolveRoleFromStorage() {
       return ROLES.EMPLOYEE;
     default:
       return ROLES.EMPLOYEE;
+  }
+}
+
+/**
+ * Asynchronously resolve the current user's role from backend API with localStorage fallback
+ * This is the preferred method for getting fresh role data.
+ * @returns {Promise<string>} Promise resolving to the user's role constant
+ */
+export async function resolveCurrentRoleAsync() {
+  try {
+    return await resolveCurrentRoleFromAuthService();
+  } catch (error) {
+    console.warn('Failed to resolve role from auth service, falling back to localStorage:', error);
+    return resolveRoleFromStorage();
+  }
+}
+
+/**
+ * Refresh role from backend and update localStorage cache
+ * This can be called after login or when role might have changed
+ * @returns {Promise<string>} Promise resolving to the updated role
+ */
+export async function refreshRoleFromBackend() {
+  try {
+    const role = await resolveCurrentRoleFromAuthService();
+    // Update localStorage cache
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('hrms_role', role);
+    }
+    return role;
+  } catch (error) {
+    console.warn('Failed to refresh role from backend:', error);
+    return resolveRoleFromStorage();
   }
 }

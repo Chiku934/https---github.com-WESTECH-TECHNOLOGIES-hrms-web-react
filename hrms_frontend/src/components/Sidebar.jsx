@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Icon from './Icon';
 import { getSidebarSectionsForRole } from '../data/navigation/sidebarConfig.js';
-import { resolveRoleFromStorage } from '../data/navigation/index.js';
+import { resolveRoleFromStorage, resolveCurrentRoleAsync } from '../data/navigation/index.js';
 import { ROLES } from '../app/config/roles';
 
 // Helper function to generate short names for sections when sidebar is collapsed
@@ -79,8 +79,7 @@ function isItemActive(item, activeKey, location) {
   return item.children?.some((child) => isItemActive(child, activeKey, location)) ?? false;
 }
 
-function isSectionActive(section, activeKey, location) {
-  const role = resolveRoleFromStorage();
+function isSectionActive(section, activeKey, location, role) {
   if (role === ROLES.EMPLOYEE && activeKey && activeKey.startsWith('myteam_hiring')) {
     return false;
   }
@@ -179,9 +178,9 @@ function SidebarItem({ item, activeKey, location, depth = 0, isExpanded = true }
   );
 }
 
-function SidebarSection({ section, activeKey, location, isExpanded }) {
+function SidebarSection({ section, activeKey, location, isExpanded, role }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const isActive = isSectionActive(section, activeKey, location);
+  const isActive = isSectionActive(section, activeKey, location, role);
   const hasMultipleItems = section.items.length > 1;
   const shortName = getSectionShortName(section.label);
   
@@ -275,15 +274,40 @@ export default function Sidebar({
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false); // Changed to false for collapsed by default
-  const role = resolveRoleFromStorage();
-  const sidebarSections = getSidebarSectionsForRole(role);
+  const [role, setRole] = useState(resolveRoleFromStorage()); // Initial role from localStorage
+  const [sidebarSections, setSidebarSections] = useState(getSidebarSectionsForRole(resolveRoleFromStorage()));
   const hiddenSubmenuKeySet = new Set(hiddenSubmenuKeys);
+
+  // Fetch fresh role from backend on component mount
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchRoleFromBackend = async () => {
+      try {
+        const freshRole = await resolveCurrentRoleAsync();
+        if (isMounted && freshRole !== role) {
+          setRole(freshRole);
+          setSidebarSections(getSidebarSectionsForRole(freshRole));
+        }
+      } catch (error) {
+        console.warn('Failed to fetch role from backend, using cached role:', error);
+        // Keep using the localStorage role
+      }
+    };
+
+    fetchRoleFromBackend();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const roleDisplayName = {
     [ROLES.SUPER_ADMIN]: 'Super Admin',
     [ROLES.SUB_ADMIN]: 'Sub Admin',
     [ROLES.COMPANY_ADMIN]: 'Company Admin',
-    [ROLES.HR]: 'HR Manager',
+    [ROLES.HR_MANAGER]: 'HR Manager',
+    [ROLES.HR_EXECUTIVE]: 'HR Executive',
     [ROLES.MANAGER]: 'Team Manager',
     [ROLES.EMPLOYEE]: 'Employee',
   }[role] || 'User';
@@ -337,6 +361,7 @@ export default function Sidebar({
             activeKey={activeKey}
             location={location}
             isExpanded={isSidebarExpanded}
+            role={role}
           />
         ))}
       </div>

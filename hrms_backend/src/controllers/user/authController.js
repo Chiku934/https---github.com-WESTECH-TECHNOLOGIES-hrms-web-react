@@ -1,4 +1,4 @@
-const { generateUserToken } = require('../../utils/jwtUtils');
+const jwt = require('jsonwebtoken');
 const { comparePassword } = require('../../utils/passwordUtils');
 const { normalizeRole, normalizeRoles, getPrimaryRole } = require('../../utils/roleUtils');
 const prisma = require('../../config/prisma');
@@ -8,6 +8,8 @@ const prisma = require('../../config/prisma');
  */
 const login = async (req, res) => {
   try {
+    console.log('=== LOGIN API CALLED - CLEAN VERSION ===');
+    console.log('Login attempt for email:', req.body.email);
     const { email, password } = req.body;
 
     // Validate input
@@ -102,24 +104,29 @@ const login = async (req, res) => {
       ? `${companyUser.employeeProfile.firstName} ${companyUser.employeeProfile.lastName}`
       : user.email.split('@')[0];
 
-    // Prepare user data for token
-    const userData = {
-      id: user.id,
+    // Create a clean payload with NO BigInt values
+    // Convert all IDs to strings explicitly
+    const tokenPayload = {
+      userId: String(user.id),
       email: user.email,
-      companyUserId: companyUser.id,
-      companyId: companyUser.companyId,
+      companyUserId: String(companyUser.id),
+      companyId: String(companyUser.companyId),
       companyName: companyUser.company.name,
       role: primaryRoleCode,
-      roles: normalizedRoles,
-      permissions: [...new Set(permissions)], // Remove duplicates
       name: employeeName,
-      employeeCode: companyUser.employeeCode,
+      employeeCode: companyUser.employeeCode || '',
       isActive: user.isActive,
       emailVerified: user.emailVerified
     };
 
-    // Generate token
-    const token = generateUserToken(userData);
+    console.log('Generating JWT token with payload:', tokenPayload);
+    
+    // Generate token directly - no external utils
+    const token = jwt.sign(
+      tokenPayload,
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+    );
 
     // Update last login
     await prisma.user.update({
@@ -127,14 +134,27 @@ const login = async (req, res) => {
       data: { lastLoginAt: new Date() }
     });
 
-    // Remove password hash from response
-    const { passwordHash, ...userWithoutPassword } = user;
+    // Prepare user response data (also convert BigInt to string)
+    const userResponse = {
+      id: String(user.id),
+      email: user.email,
+      companyUserId: String(companyUser.id),
+      companyId: String(companyUser.companyId),
+      companyName: companyUser.company.name,
+      role: primaryRoleCode,
+      roles: normalizedRoles,
+      permissions: [...new Set(permissions)], // Remove duplicates
+      name: employeeName,
+      employeeCode: companyUser.employeeCode || '',
+      isActive: user.isActive,
+      emailVerified: user.emailVerified
+    };
 
     res.status(200).json({
       status: 'success',
       message: 'Login successful',
       data: {
-        user: userData,
+        user: userResponse,
         token
       }
     });
@@ -152,15 +172,12 @@ const login = async (req, res) => {
  */
 const getMe = async (req, res) => {
   try {
-    // User is attached to request by auth middleware
-    const { userId, companyUserId, companyId } = req.user;
+    const userId = req.user.userId;
 
-    // Fetch fresh user data from database
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: BigInt(userId) },
       include: {
         companyUsers: {
-          where: { id: companyUserId },
           include: {
             company: true,
             employeeProfile: true,
@@ -178,14 +195,16 @@ const getMe = async (req, res) => {
               }
             },
             employeeAssignments: {
-              where: { isCurrent: true },
               include: {
                 department: true,
                 designation: true,
                 manager: {
                   include: {
-                    user: true,
-                    employeeProfile: true
+                    companyUser: {
+                      include: {
+                        employeeProfile: true
+                      }
+                    }
                   }
                 }
               }
@@ -206,15 +225,17 @@ const getMe = async (req, res) => {
     if (!companyUser) {
       return res.status(404).json({
         status: 'error',
-        message: 'Company membership not found'
+        message: 'Company user not found'
       });
     }
 
-    // Get roles and permissions
+    // Get roles
     const roles = companyUser.userRoles.map(ur => ur.role);
     const dbRoleNames = roles.map(r => r.name);
     const normalizedRoles = normalizeRoles(dbRoleNames);
-    
+    const primaryRoleCode = getPrimaryRole(dbRoleNames);
+
+    // Get permissions
     const permissions = [];
     roles.forEach(role => {
       role.rolePermissions.forEach(rp => {
@@ -225,11 +246,11 @@ const getMe = async (req, res) => {
     });
 
     // Get current assignment
-    const currentAssignment = companyUser.employeeAssignments[0] || null;
+    const currentAssignment = companyUser.employeeAssignments[0];
 
     // Prepare response
     const userData = {
-      id: user.id,
+      id: String(user.id),
       email: user.email,
       phone: user.phone,
       isActive: user.isActive,
@@ -238,55 +259,67 @@ const getMe = async (req, res) => {
       lastLoginAt: user.lastLoginAt,
       createdAt: user.createdAt,
       companyUser: {
-        id: companyUser.id,
+        id: String(companyUser.id),
         employeeCode: companyUser.employeeCode,
         status: companyUser.status,
         joinedAt: companyUser.joinedAt,
         leftAt: companyUser.leftAt
       },
       company: {
-        id: companyUser.company.id,
+        id: String(companyUser.company.id),
         name: companyUser.company.name,
         slug: companyUser.company.slug,
         legalName: companyUser.company.legalName,
         countryCode: companyUser.company.countryCode,
-        timezone: companyUser.company.timezone,
-        plan: companyUser.company.plan,
-        status: companyUser.company.status
+        timezone: companyUser.company.timezone
       },
-      profile: companyUser.employeeProfile || null,
+      employeeProfile: companyUser.employeeProfile ? {
+        firstName: companyUser.employeeProfile.firstName,
+        middleName: companyUser.employeeProfile.middleName,
+        lastName: companyUser.employeeProfile.lastName,
+        dob: companyUser.employeeProfile.dob,
+        gender: companyUser.employeeProfile.gender,
+        personalEmail: companyUser.employeeProfile.personalEmail,
+        personalPhone: companyUser.employeeProfile.personalPhone,
+        photoUrl: companyUser.employeeProfile.photoUrl
+      } : null,
       roles: roles.map(r => ({
-        id: r.id,
+        id: String(r.id),
         name: r.name,
-        normalizedName: normalizeRole(r.name),
         description: r.description,
         isSystem: r.isSystem
       })),
-      permissions: [...new Set(permissions)], // Remove duplicates, array of permission codes
+      normalizedRoles,
+      primaryRole: primaryRoleCode,
+      permissions: [...new Set(permissions)],
       currentAssignment: currentAssignment ? {
-        id: currentAssignment.id,
-        department: currentAssignment.department,
-        designation: currentAssignment.designation,
-        employmentType: currentAssignment.employmentType,
-        workLocation: currentAssignment.workLocation,
-        startDate: currentAssignment.startDate,
-        endDate: currentAssignment.endDate,
+        id: String(currentAssignment.id),
+        department: currentAssignment.department ? {
+          id: String(currentAssignment.department.id),
+          name: currentAssignment.department.name,
+          code: currentAssignment.department.code
+        } : null,
+        designation: currentAssignment.designation ? {
+          id: String(currentAssignment.designation.id),
+          name: currentAssignment.designation.name,
+          code: currentAssignment.designation.code
+        } : null,
         manager: currentAssignment.manager ? {
-          id: currentAssignment.manager.id,
-          employeeCode: currentAssignment.manager.employeeCode,
-          profile: currentAssignment.manager.employeeProfile
+          id: String(currentAssignment.manager.id),
+          employeeProfile: currentAssignment.manager.companyUser.employeeProfile ? {
+            firstName: currentAssignment.manager.companyUser.employeeProfile.firstName,
+            lastName: currentAssignment.manager.companyUser.employeeProfile.lastName
+          } : null
         } : null
       } : null
     };
 
     res.status(200).json({
       status: 'success',
-      data: {
-        user: userData
-      }
+      data: userData
     });
   } catch (error) {
-    console.error('Get profile error:', error);
+    console.error('GetMe error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Internal server error'
@@ -295,7 +328,7 @@ const getMe = async (req, res) => {
 };
 
 /**
- * Logout user (client-side token removal)
+ * Logout user (client-side operation, just returns success)
  */
 const logout = async (req, res) => {
   try {

@@ -346,25 +346,56 @@ export default function CompanyAdminTeamSetup() {
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const routeMode = searchParams.get('mode');
   const routeId = searchParams.get('id');
-  const employeeRoster = useMemo(() => {
-    const roster = loadUserSetupUsers()
-      .filter((item) => [ROLES.COMPANY_ADMIN, ROLES.HR, ROLES.EMPLOYEE].includes(item.role))
-      .map((item) => ({
-        id: item.id,
-        fullName: item.fullName,
-        userName: item.userName,
-        role: item.role,
-      }))
-      .filter((item) => item.fullName);
-    const fallback = companyAdminEmployeeOptions.map((item) => ({
-      id: item.value,
-      fullName: item.label,
-      userName: '',
-      role: 'Employee',
-    }));
-    const source = roster.length ? roster : fallback;
-    return source.filter((item, index, list) => index === list.findIndex((entry) => entry.fullName.toLowerCase() === item.fullName.toLowerCase()));
+  const [employeeRoster, setEmployeeRoster] = useState([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
+  
+  // Load employee roster from API
+  useEffect(() => {
+    async function loadEmployeeRoster() {
+      setLoadingEmployees(true);
+      try {
+        const users = await loadUserSetupUsers();
+        const roster = users
+          .filter((item) => [ROLES.COMPANY_ADMIN, ROLES.HR, ROLES.EMPLOYEE].includes(item.role))
+          .map((item) => ({
+            id: item.id,
+            fullName: item.fullName,
+            userName: item.userName,
+            role: item.role,
+          }))
+          .filter((item) => item.fullName);
+        
+        const fallback = companyAdminEmployeeOptions.map((item) => ({
+          id: item.value,
+          fullName: item.label,
+          userName: '',
+          role: 'Employee',
+        }));
+        
+        const source = roster.length ? roster : fallback;
+        const uniqueSource = source.filter((item, index, list) =>
+          index === list.findIndex((entry) => entry.fullName.toLowerCase() === item.fullName.toLowerCase())
+        );
+        
+        setEmployeeRoster(uniqueSource);
+      } catch (error) {
+        console.error('Error loading employee roster:', error);
+        // Fallback to static data
+        const fallback = companyAdminEmployeeOptions.map((item) => ({
+          id: item.value,
+          fullName: item.label,
+          userName: '',
+          role: 'Employee',
+        }));
+        setEmployeeRoster(fallback);
+      } finally {
+        setLoadingEmployees(false);
+      }
+    }
+    
+    loadEmployeeRoster();
   }, []);
+  
   const employeeRosterMap = useMemo(() => {
     return new Map(employeeRoster.map((item) => [item.fullName.toLowerCase(), item]));
   }, [employeeRoster]);

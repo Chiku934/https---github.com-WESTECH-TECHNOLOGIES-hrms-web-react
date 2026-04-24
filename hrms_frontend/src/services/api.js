@@ -77,6 +77,15 @@ export const designationAPI = {
   delete: (id) => api.delete(`/designations/${id}`),
 };
 
+// Employees API
+export const employeeAPI = {
+  getAll: () => api.get('/employees'),
+  getById: (id) => api.get(`/employees/${id}`),
+  create: (data) => api.post('/employees', data),
+  update: (id, data) => api.put(`/employees/${id}`, data),
+  delete: (id) => api.delete(`/employees/${id}`),
+};
+
 // Employee Profiles API
 export const employeeProfileAPI = {
   getAll: () => api.get('/employee-profiles'),

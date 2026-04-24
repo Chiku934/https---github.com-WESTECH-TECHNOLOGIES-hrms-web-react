@@ -5,8 +5,17 @@ import Icon from '../../../components/Icon';
 import '../../super-admin/styles/packages.css';
 import {
   companyAdminOrganizationQuickActions,
-  companyAdminOrganizationSeed,
 } from '../data/masterData';
+import {
+  loadDepartments,
+  loadDesignations,
+  createDepartment,
+  updateDepartment,
+  deleteDepartment as deleteDepartmentAPI,
+  createDesignation,
+  updateDesignation,
+  deleteDesignation as deleteDesignationAPI,
+} from '../../../services/masterDataService';
 
 const tabs = [
   { key: 'overview', label: 'Overview' },
@@ -32,8 +41,6 @@ const sidebarActiveKeyMap = {
   designation: 'company-admin-organization-designation',
 };
 
-const storageKey = 'company_admin_organization_settings';
-
 function cloneEntries(entries) {
   return entries.map((item) => ({
     id: item.id,
@@ -44,68 +51,25 @@ function cloneEntries(entries) {
 
 function createDefaultState() {
   return {
-    departments: cloneEntries(companyAdminOrganizationSeed.departments),
-    designations: cloneEntries(companyAdminOrganizationSeed.designations),
+    departments: [],
+    designations: [],
   };
 }
 
-function migrateLegacyRecords(records) {
-  return {
-    departments: records
-      .filter((item) => item.type === 'Department')
-      .map((item) => ({
-        id: item.id,
-        name: item.name,
-        status: item.status || 'Active',
-      })),
-    designations: records
-      .filter((item) => item.type === 'Designation')
-      .map((item) => ({
-        id: item.id,
-        name: item.name,
-        status: item.status || 'Active',
-      })),
-  };
-}
-
-function loadOrganization() {
-  if (typeof window === 'undefined') {
-    return createDefaultState();
-  }
-
+async function loadOrganization() {
   try {
-    const stored = window.localStorage.getItem(storageKey);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed && Array.isArray(parsed.departments) && Array.isArray(parsed.designations)) {
-        return {
-          departments: cloneEntries(parsed.departments),
-          designations: cloneEntries(parsed.designations),
-        };
-      }
-
-      if (Array.isArray(parsed)) {
-        return migrateLegacyRecords(parsed);
-      }
-    }
-
-    const legacy = window.localStorage.getItem('company_admin_master_settings');
-    if (legacy) {
-      const parsed = JSON.parse(legacy);
-      if (Array.isArray(parsed)) {
-        return migrateLegacyRecords(parsed);
-      }
-    }
-  } catch {
+    const [departments, designations] = await Promise.all([
+      loadDepartments(),
+      loadDesignations(),
+    ]);
+    
+    return {
+      departments: cloneEntries(departments),
+      designations: cloneEntries(designations),
+    };
+  } catch (error) {
+    console.error('Error loading organization data:', error);
     return createDefaultState();
-  }
-
-  return createDefaultState();
-}
-
-function saveOrganization(records) {
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem(storageKey, JSON.stringify(records));
   }
 }
 
@@ -308,17 +272,74 @@ export default function CompanyAdminMaster() {
   const location = useLocation();
   const navigate = useNavigate();
   const [tab, setTab] = useState('overview');
-  const [organization, setOrganization] = useState(() => loadOrganization());
+  const [organization, setOrganization] = useState(createDefaultState());
   const [departmentName, setDepartmentName] = useState('');
   const [designationName, setDesignationName] = useState('');
   const [departmentError, setDepartmentError] = useState('');
   const [designationError, setDesignationError] = useState('');
   const [editingDepartmentId, setEditingDepartmentId] = useState(null);
   const [editingDesignationId, setEditingDesignationId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Validation helper functions
+  const validateDepartmentName = (name, isEditing = false, editingId = null) => {
+    const errors = [];
+    const trimmed = name.trim();
+    
+    if (!trimmed) {
+      errors.push('Department name is required.');
+    } else if (trimmed.length < 2) {
+      errors.push('Department name must be at least 2 characters.');
+    } else if (trimmed.length > 100) {
+      errors.push('Department name cannot exceed 100 characters.');
+    } else if (!isEditing && organization.departments.some((item) => item.name.toLowerCase() === trimmed.toLowerCase())) {
+      errors.push('This department already exists.');
+    } else if (isEditing && organization.departments.some((item) =>
+      item.id !== editingId && item.name.toLowerCase() === trimmed.toLowerCase()
+    )) {
+      errors.push('Another department with this name already exists.');
+    }
+    
+    return errors;
+  };
+  
+  const validateDesignationName = (name, isEditing = false, editingId = null) => {
+    const errors = [];
+    const trimmed = name.trim();
+    
+    if (!trimmed) {
+      errors.push('Designation name is required.');
+    } else if (trimmed.length < 2) {
+      errors.push('Designation name must be at least 2 characters.');
+    } else if (trimmed.length > 100) {
+      errors.push('Designation name cannot exceed 100 characters.');
+    } else if (!isEditing && organization.designations.some((item) => item.name.toLowerCase() === trimmed.toLowerCase())) {
+      errors.push('This designation already exists.');
+    } else if (isEditing && organization.designations.some((item) =>
+      item.id !== editingId && item.name.toLowerCase() === trimmed.toLowerCase()
+    )) {
+      errors.push('Another designation with this name already exists.');
+    }
+    
+    return errors;
+  };
 
+  // Load organization data on component mount
   useEffect(() => {
-    saveOrganization(organization);
-  }, [organization]);
+    async function fetchOrganization() {
+      setLoading(true);
+      try {
+        const orgData = await loadOrganization();
+        setOrganization(orgData);
+      } catch (error) {
+        console.error('Failed to load organization data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchOrganization();
+  }, []);
 
   useEffect(() => {
     const nextTab = hashToTab[location.hash] || 'overview';
@@ -343,81 +364,232 @@ export default function CompanyAdminMaster() {
     navigate({ pathname: location.pathname, search: '', hash: tabToHash[nextTab] }, { replace: true });
   };
 
-  const addDepartment = (event) => {
+  const addDepartment = async (event) => {
     event.preventDefault();
     const value = departmentName.trim();
-    if (!value) {
-      setDepartmentError('Department is required.');
-      return;
-    }
-    if (!editingDepartmentId && organization.departments.some((item) => item.name.toLowerCase() === value.toLowerCase())) {
-      setDepartmentError('This department already exists.');
+    
+    // Use the validation helper
+    const validationErrors = validateDepartmentName(value, !!editingDepartmentId, editingDepartmentId);
+    if (validationErrors.length > 0) {
+      setDepartmentError(validationErrors.join(' '));
       return;
     }
 
-    setOrganization((current) => ({
-      ...current,
-      departments: editingDepartmentId
-        ? current.departments.map((item) => (item.id === editingDepartmentId ? { ...item, name: value } : item))
-        : [
-            { id: String(current.departments.length + 1), name: value, status: 'Active' },
-            ...current.departments,
-          ],
-    }));
-    setDepartmentName('');
-    setDepartmentError('');
-    setEditingDepartmentId(null);
+    const departmentData = {
+      name: value,
+      status: 'Active',
+      code: `DEP-${Date.now().toString().slice(-6)}`,
+    };
+
+    try {
+      if (editingDepartmentId) {
+        // Update existing department
+        const result = await updateDepartment(editingDepartmentId, departmentData);
+        if (result.success) {
+          setOrganization((current) => ({
+            ...current,
+            departments: current.departments.map((item) =>
+              item.id === editingDepartmentId ? result.data : item
+            ),
+          }));
+        } else {
+          setDepartmentError(result.message || 'Failed to update department');
+          return;
+        }
+      } else {
+        // Create new department
+        const result = await createDepartment(departmentData);
+        if (result.success) {
+          setOrganization((current) => ({
+            ...current,
+            departments: [result.data, ...current.departments],
+          }));
+        } else {
+          setDepartmentError(result.message || 'Failed to create department');
+          return;
+        }
+      }
+      
+      setDepartmentName('');
+      setDepartmentError('');
+      setEditingDepartmentId(null);
+    } catch (error) {
+      console.error('Error saving department:', error);
+      setDepartmentError('An error occurred while saving the department');
+    }
   };
 
-  const addDesignation = (event) => {
+  const addDesignation = async (event) => {
     event.preventDefault();
     const value = designationName.trim();
-    if (!value) {
-      setDesignationError('Designation is required.');
+    
+    // Use the validation helper
+    const validationErrors = validateDesignationName(value, !!editingDesignationId, editingDesignationId);
+    if (validationErrors.length > 0) {
+      setDesignationError(validationErrors.join(' '));
       return;
     }
-    if (!editingDesignationId && organization.designations.some((item) => item.name.toLowerCase() === value.toLowerCase())) {
-      setDesignationError('This designation already exists.');
-      return;
-    }
 
-    setOrganization((current) => ({
-      ...current,
-      designations: editingDesignationId
-        ? current.designations.map((item) => (item.id === editingDesignationId ? { ...item, name: value } : item))
-        : [
-            { id: String(current.designations.length + 1), name: value, status: 'Active' },
-            ...current.designations,
-          ],
-    }));
-    setDesignationName('');
-    setDesignationError('');
-    setEditingDesignationId(null);
-  };
+    const designationData = {
+      name: value,
+      status: 'Active',
+      note: 'Level 1', // Default level
+    };
 
-  const deleteDepartment = (id) => {
-    setOrganization((current) => ({
-      ...current,
-      departments: current.departments.filter((item) => item.id !== id),
-    }));
-    if (editingDepartmentId === id) {
-      setDepartmentName('');
-      setEditingDepartmentId(null);
-    }
-  };
-
-  const deleteDesignation = (id) => {
-    setOrganization((current) => ({
-      ...current,
-      designations: current.designations.filter((item) => item.id !== id),
-    }));
-    if (editingDesignationId === id) {
+    try {
+      if (editingDesignationId) {
+        // Update existing designation
+        const result = await updateDesignation(editingDesignationId, designationData);
+        if (result.success) {
+          setOrganization((current) => ({
+            ...current,
+            designations: current.designations.map((item) =>
+              item.id === editingDesignationId ? result.data : item
+            ),
+          }));
+        } else {
+          setDesignationError(result.message || 'Failed to update designation');
+          return;
+        }
+      } else {
+        // Create new designation
+        const result = await createDesignation(designationData);
+        if (result.success) {
+          setOrganization((current) => ({
+            ...current,
+            designations: [result.data, ...current.designations],
+          }));
+        } else {
+          setDesignationError(result.message || 'Failed to create designation');
+          return;
+        }
+      }
+      
       setDesignationName('');
+      setDesignationError('');
       setEditingDesignationId(null);
+    } catch (error) {
+      console.error('Error saving designation:', error);
+      setDesignationError('An error occurred while saving the designation');
+    }
+  };
+
+  const deleteDepartment = async (id) => {
+    try {
+      const result = await deleteDepartmentAPI(id);
+      if (result.success) {
+        setOrganization((current) => ({
+          ...current,
+          departments: current.departments.filter((item) => item.id !== id),
+        }));
+        if (editingDepartmentId === id) {
+          setDepartmentName('');
+          setEditingDepartmentId(null);
+        }
+      } else {
+        console.error('Failed to delete department:', result.message);
+        // Still remove from UI for better UX
+        setOrganization((current) => ({
+          ...current,
+          departments: current.departments.filter((item) => item.id !== id),
+        }));
+        if (editingDepartmentId === id) {
+          setDepartmentName('');
+          setEditingDepartmentId(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting department:', error);
+      // Fallback: remove from UI
+      setOrganization((current) => ({
+        ...current,
+        departments: current.departments.filter((item) => item.id !== id),
+      }));
+      if (editingDepartmentId === id) {
+        setDepartmentName('');
+        setEditingDepartmentId(null);
+      }
+    }
+  };
+
+  const deleteDesignation = async (id) => {
+    try {
+      const result = await deleteDesignationAPI(id);
+      if (result.success) {
+        setOrganization((current) => ({
+          ...current,
+          designations: current.designations.filter((item) => item.id !== id),
+        }));
+        if (editingDesignationId === id) {
+          setDesignationName('');
+          setEditingDesignationId(null);
+        }
+      } else {
+        console.error('Failed to delete designation:', result.message);
+        // Still remove from UI for better UX
+        setOrganization((current) => ({
+          ...current,
+          designations: current.designations.filter((item) => item.id !== id),
+        }));
+        if (editingDesignationId === id) {
+          setDesignationName('');
+          setEditingDesignationId(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting designation:', error);
+      // Fallback: remove from UI
+      setOrganization((current) => ({
+        ...current,
+        designations: current.designations.filter((item) => item.id !== id),
+      }));
+      if (editingDesignationId === id) {
+        setDesignationName('');
+        setEditingDesignationId(null);
+      }
     }
   };
 
   const sectionTitle = tab === 'overview' ? 'Organization' : tab === 'department' ? 'Department' : 'Designation';
+
+  // Show loading state
+  if (loading) {
+    return (
+      <DashboardShell
+        activeKey={sidebarActiveKeyMap[tab] || sidebarActiveKeyMap.overview}
+        headerProps={{ companyText: 'Company Admin' }}
+      >
+        <div className="superadmin-package-tabs">
+          {tabs.map((item) => (
+            <Link
+              key={item.key}
+              to={{ pathname: location.pathname, search: '', hash: tabToHash[item.key] }}
+              replace
+              className={`superadmin-package-tab ${tab === item.key ? 'active' : ''}`}
+              aria-current={tab === item.key ? 'page' : undefined}
+              onClick={(event) => {
+                event.preventDefault();
+                setTabAndHash(item.key);
+              }}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+
+        <div className="superadmin-section-header">
+          <div className="dashboard-section-heading">{sectionTitle}</div>
+        </div>
+
+        <div className="superadmin-package-layout" style={{ justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
+          <div className="superadmin-package-loading">
+            <div className="spinner"></div>
+            <p>Loading organization data...</p>
+          </div>
+        </div>
+      </DashboardShell>
+    );
+  }
 
   return (
     <DashboardShell

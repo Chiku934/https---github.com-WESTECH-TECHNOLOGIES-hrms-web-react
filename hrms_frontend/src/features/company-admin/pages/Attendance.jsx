@@ -253,26 +253,54 @@ export default function CompanyAdminAttendance() {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState({});
+  const [employeeOptions, setEmployeeOptions] = useState([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const routeMode = searchParams.get('mode');
   const routeId = searchParams.get('id');
 
-  const employeeOptions = useMemo(() => {
-    const roster = loadUserSetupUsers()
-      .filter((item) => [ROLES.COMPANY_ADMIN, ROLES.HR, ROLES.EMPLOYEE].includes(item.role))
-      .map((item) => ({
-        id: item.id,
-        fullName: item.fullName,
-        userName: item.userName,
-      }))
-      .filter((item) => item.fullName);
-    const fallback = companyAdminAttendanceList.map((item) => ({
-      id: item.employeeId,
-      fullName: item.employee,
-      userName: '',
-    }));
-    const source = roster.length ? roster : fallback;
-    return source.filter((item, index, list) => index === list.findIndex((entry) => entry.fullName.toLowerCase() === item.fullName.toLowerCase()));
+  // Load employee options from API
+  useEffect(() => {
+    async function loadEmployeeOptions() {
+      setLoadingEmployees(true);
+      try {
+        const users = await loadUserSetupUsers();
+        const roster = users
+          .filter((item) => [ROLES.COMPANY_ADMIN, ROLES.HR, ROLES.EMPLOYEE].includes(item.role))
+          .map((item) => ({
+            id: item.id,
+            fullName: item.fullName,
+            userName: item.userName,
+          }))
+          .filter((item) => item.fullName);
+        
+        const fallback = companyAdminAttendanceList.map((item) => ({
+          id: item.employeeId,
+          fullName: item.employee,
+          userName: '',
+        }));
+        
+        const source = roster.length ? roster : fallback;
+        const uniqueSource = source.filter((item, index, list) =>
+          index === list.findIndex((entry) => entry.fullName.toLowerCase() === item.fullName.toLowerCase())
+        );
+        
+        setEmployeeOptions(uniqueSource);
+      } catch (error) {
+        console.error('Error loading employee options:', error);
+        // Fallback to static data
+        const fallback = companyAdminAttendanceList.map((item) => ({
+          id: item.employeeId,
+          fullName: item.employee,
+          userName: '',
+        }));
+        setEmployeeOptions(fallback);
+      } finally {
+        setLoadingEmployees(false);
+      }
+    }
+    
+    loadEmployeeOptions();
   }, []);
 
   useEffect(() => saveAttendance(records), [records]);

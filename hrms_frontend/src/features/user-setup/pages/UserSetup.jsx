@@ -252,22 +252,22 @@ export default function UserSetup() {
   const visibility = config.visibility;
   const canOpenAllCreateSteps = role === ROLES.COMPANY_ADMIN || role === ROLES.HR;
   const navigate = useNavigate();
-  const initialUsers = useMemo(() => loadUserSetupUsers(), []);
   const defaultTab = config.tabs.includes('overview') ? 'overview' : config.tabs[0];
   const initialHashTab = hashToTab[location.hash];
   const initialCreateStep = hashToCreateStep[location.hash] || createWizardSteps[0].key;
 
-  const [users, setUsers] = useState(initialUsers);
-  const [documents, setDocuments] = useState(() => loadUserSetupDocuments());
-  const [addresses, setAddresses] = useState(() => loadUserSetupAddresses());
+  const [users, setUsers] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [addresses, setAddresses] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(() => (initialHashTab && config.tabs.includes(initialHashTab) ? initialHashTab : defaultTab));
   const [search, setSearch] = useState('');
-  const [selectedId, setSelectedId] = useState(initialUsers[0]?.id || '');
+  const [selectedId, setSelectedId] = useState('');
   const [selectedIds, setSelectedIds] = useState([]);
   const [viewUser, setViewUser] = useState(null);
   const [deleteUserId, setDeleteUserId] = useState(null);
   const [editingUserId, setEditingUserId] = useState(null);
-  const [userForm, setUserForm] = useState(createEmptyUser(role, initialUsers[0]?.id || ''));
+  const [userForm, setUserForm] = useState(createEmptyUser(role, ''));
   const [createWizardUnlocked, setCreateWizardUnlocked] = useState(canOpenAllCreateSteps);
   const [activeCreateStep, setActiveCreateStep] = useState(initialCreateStep);
   const [documentRows, setDocumentRows] = useState([createEmptyDocument('')]);
@@ -289,9 +289,60 @@ export default function UserSetup() {
       ? 'user-setup-users'
       : 'user-setup-create';
 
-  useEffect(() => saveUserSetupUsers(users), [users]);
-  useEffect(() => saveUserSetupDocuments(documents), [documents]);
-  useEffect(() => saveUserSetupAddresses(addresses), [addresses]);
+  // Load data from API on component mount
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const [loadedUsers, loadedDocuments, loadedAddresses] = await Promise.all([
+          loadUserSetupUsers(),
+          loadUserSetupDocuments(),
+          loadUserSetupAddresses()
+        ]);
+        
+        setUsers(loadedUsers);
+        setDocuments(loadedDocuments);
+        setAddresses(loadedAddresses);
+        
+        // Set initial selected ID if users exist
+        if (loadedUsers.length > 0) {
+          setSelectedId(loadedUsers[0]?.id || '');
+          setUserForm(createEmptyUser(role, loadedUsers[0]?.id || ''));
+        }
+      } catch (error) {
+        console.error('Error loading user setup data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadData();
+  }, [role]);
+
+  // Save data when it changes
+  useEffect(() => {
+    if (users.length > 0) {
+      saveUserSetupUsers(users).catch(error => {
+        console.error('Error saving users:', error);
+      });
+    }
+  }, [users]);
+
+  useEffect(() => {
+    if (documents.length > 0) {
+      saveUserSetupDocuments(documents).catch(error => {
+        console.error('Error saving documents:', error);
+      });
+    }
+  }, [documents]);
+
+  useEffect(() => {
+    if (addresses.length > 0) {
+      saveUserSetupAddresses(addresses).catch(error => {
+        console.error('Error saving addresses:', error);
+      });
+    }
+  }, [addresses]);
 
   const accessibleUsers = useMemo(() => {
     if (role === ROLES.COMPANY_ADMIN) {

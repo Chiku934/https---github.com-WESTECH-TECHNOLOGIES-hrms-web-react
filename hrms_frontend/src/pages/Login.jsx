@@ -1,20 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon';
-
-const DEMO_USERS = {
-  'super-admin': { email: 'superadmin@hrms.com', password: '1234', redirectTo: '/dashboard', label: 'Super Admin' },
-  'hr-manager': { email: 'hrmanager@hrms.com', password: '1234', redirectTo: '/dashboard', label: 'HR Manager' },
-  'hr-executive': { email: 'hrexecutive@hrms.com', password: '1234', redirectTo: '/dashboard', label: 'HR Executive' },
-  'team-lead': { email: 'teamlead@hrms.com', password: '1234', redirectTo: '/dashboard', label: 'Team Lead' },
-  employee: { email: 'employee@hrms.com', password: '1234', redirectTo: '/dashboard', label: 'Employee' },
-};
-
-const DEFAULT_ROLE = 'hr-manager';
+import { authAPI } from '../services/api';
 
 export default function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState(DEMO_USERS[DEFAULT_ROLE].email);
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -28,18 +19,10 @@ export default function Login() {
     };
   }, []);
 
-  const handleQuickFill = (nextRole) => {
-    setEmail(DEMO_USERS[nextRole].email);
-    setPassword(DEMO_USERS[nextRole].password);
-    setMessage({ type: '', text: '' });
-    setShowPassword(false);
-  };
-
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const normalizedEmail = email.trim().toLowerCase();
-    const currentUser = Object.values(DEMO_USERS).find((user) => user.email === normalizedEmail);
 
     if (!normalizedEmail) {
       setMessage({ type: 'error', text: 'Please enter your email address.' });
@@ -51,32 +34,61 @@ export default function Login() {
       return;
     }
 
-    if (!currentUser) {
-      setMessage({
-        type: 'error',
-        text: 'Use one of the demo emails from the quick links below or enter the matching role email.',
-      });
-      return;
-    }
-
     setLoading(true);
     setMessage({ type: '', text: '' });
 
-    window.setTimeout(() => {
-      if (normalizedEmail === currentUser.email && password === currentUser.password) {
-        setMessage({ type: 'success', text: `Redirecting to ${currentUser.label} Dashboard...` });
-        const matchedRole = Object.entries(DEMO_USERS).find(([, user]) => user.email === normalizedEmail)?.[0] ?? DEFAULT_ROLE;
-        window.localStorage.setItem('hrms_role', matchedRole);
-        window.setTimeout(() => navigate(currentUser.redirectTo), 900);
-        return;
+    try {
+      const response = await authAPI.login(normalizedEmail, password);
+      
+      // Extract data from response
+      const { user, token } = response.data;
+      
+      // Store token and role in localStorage
+      localStorage.setItem('hrms_token', token);
+      localStorage.setItem('hrms_role', user.role);
+      
+      // Store additional user info if needed
+      localStorage.setItem('hrms_user', JSON.stringify(user));
+      
+      setMessage({
+        type: 'success',
+        text: `Login successful! Redirecting to ${user.role} dashboard...`
+      });
+      
+      // Redirect based on role
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Login error:', error);
+      
+      // Extract error message from backend response if available
+      let errorMessage = error.response?.data?.message || 'Login failed. Please check your credentials.';
+      
+      // Fallback to status-based messages if no specific message from backend
+      if (!error.response?.data?.message) {
+        if (error.response?.status === 401) {
+          errorMessage = 'Invalid email or password.';
+        } else if (error.response?.status === 400) {
+          errorMessage = 'Invalid request. Please check your input.';
+        } else if (error.response?.status === 403) {
+          errorMessage = 'Access denied. User is not assigned to any company.';
+        } else if (error.response?.status === 404) {
+          errorMessage = 'User not found.';
+        } else if (error.message?.includes('Network Error')) {
+          errorMessage = 'Network error. Please check your connection.';
+        } else if (error.message?.includes('timeout')) {
+          errorMessage = 'Request timeout. Please try again.';
+        }
       }
-
+      
       setMessage({
         type: 'error',
-        text: 'Invalid credentials. Use the matching demo email and 1234 password from the quick links below.',
+        text: errorMessage
       });
       setLoading(false);
-    }, 700);
+    }
   };
 
   return (
@@ -131,7 +143,6 @@ export default function Login() {
               <a href="#" onClick={(event) => event.preventDefault()}>
                 Forgot password?
               </a>
-              <span>Use the demo credentials below if needed.</span>
             </div>
 
             <button type="submit" className="login-submit" disabled={loading}>
@@ -146,25 +157,6 @@ export default function Login() {
             </button>
 
             <div className={`login-message ${message.type}`}>{message.text}</div>
-
-            <div className="login-quick-label">Quick Logins</div>
-            <div className="login-quick">
-              <button type="button" onClick={() => handleQuickFill('super-admin')}>
-                Login as Super Admin
-              </button>
-              <button type="button" onClick={() => handleQuickFill('hr-manager')}>
-                Login as HR Manager
-              </button>
-              <button type="button" onClick={() => handleQuickFill('hr-executive')}>
-                Login as HR Executive
-              </button>
-              <button type="button" onClick={() => handleQuickFill('team-lead')}>
-                Login as Team Lead
-              </button>
-              <button type="button" onClick={() => handleQuickFill('employee')}>
-                Login as Employee
-              </button>
-            </div>
           </form>
         </section>
       </div>
