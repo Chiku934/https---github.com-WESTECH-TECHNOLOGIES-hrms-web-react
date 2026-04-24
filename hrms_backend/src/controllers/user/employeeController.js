@@ -56,6 +56,20 @@ const getAllEmployees = async (req, res) => {
           include: {
             role: true
           }
+        },
+        employeeDocuments: {
+          include: {
+            documentType: true,
+            verifiedByUser: {
+              include: {
+                user: {
+                  select: {
+                    email: true
+                  }
+                }
+              }
+            }
+          }
         }
       },
       orderBy: {
@@ -94,6 +108,22 @@ const getAllEmployees = async (req, res) => {
         leftAt: cu.leftAt ? cu.leftAt.toISOString().split('T')[0] : null,
         isActive: cu.user.isActive,
         roles: cu.userRoles.map(ur => ur.role.name),
+        documents: cu.employeeDocuments.map(d => ({
+          id: d.id.toString(),
+          documentType: d.documentType?.name,
+          fileName: d.fileName,
+          fileUrl: d.fileUrl,
+          documentNumber: d.documentNumber,
+          issuedDate: d.issuedDate ? d.issuedDate.toISOString().split('T')[0] : null,
+          expiryDate: d.expiryDate ? d.expiryDate.toISOString().split('T')[0] : null,
+          verified: d.verified,
+          verifiedBy: d.verifiedBy?.toString(),
+          verifiedByName: d.verifiedByUser?.employeeProfile
+            ? `${d.verifiedByUser.employeeProfile.firstName || ''} ${d.verifiedByUser.employeeProfile.lastName || ''}`.trim()
+            : d.verifiedByUser?.user?.email || '',
+          verifiedAt: d.verifiedAt,
+          uploadedAt: d.uploadedAt
+        })),
         createdAt: cu.createdAt
       };
     });
@@ -619,7 +649,41 @@ const updateEmployee = async (req, res) => {
           });
         }
       }
-      
+       
+      // Update documents if provided
+      if (updateData.documents !== undefined && Array.isArray(updateData.documents)) {
+        // Delete existing documents
+        await tx.employeeDocument.deleteMany({
+          where: {
+            companyUserId: BigInt(id)
+          }
+        });
+        
+        // Add new documents if array is not empty
+        if (updateData.documents.length > 0) {
+          const documentData = updateData.documents.map(doc => ({
+            companyId: BigInt(companyId),
+            companyUserId: BigInt(id),
+            documentTypeId: doc.documentTypeId ? BigInt(doc.documentTypeId) : null,
+            fileName: doc.fileName || null,
+            fileUrl: doc.fileUrl || '',
+            fileSize: doc.fileSize ? BigInt(doc.fileSize) : null,
+            mimeType: doc.mimeType || null,
+            documentNumber: doc.documentNumber || null,
+            issuedDate: doc.issuedDate ? new Date(doc.issuedDate) : null,
+            expiryDate: doc.expiryDate ? new Date(doc.expiryDate) : null,
+            verified: doc.verified || false,
+            verifiedBy: doc.verifiedBy ? BigInt(doc.verifiedBy) : null,
+            verifiedAt: doc.verifiedAt ? new Date(doc.verifiedAt) : null,
+            uploadedAt: new Date()
+          }));
+          
+          await tx.employeeDocument.createMany({
+            data: documentData
+          });
+        }
+      }
+       
       return {
         companyUser: updatedCompanyUser,
         profile: updatedProfile,
@@ -667,6 +731,20 @@ const updateEmployee = async (req, res) => {
           include: {
             role: true
           }
+        },
+        employeeDocuments: {
+          include: {
+            documentType: true,
+            verifiedByUser: {
+              include: {
+                user: {
+                  select: {
+                    email: true
+                  }
+                }
+              }
+            }
+          }
         }
       }
     });
@@ -698,6 +776,22 @@ const updateEmployee = async (req, res) => {
       status: updatedEmployee.status || 'active',
       joinDate: updatedEmployee.joinedAt ? updatedEmployee.joinedAt.toISOString().split('T')[0] : null,
       roles: updatedEmployee.userRoles.map(ur => ur.role.name),
+      documents: updatedEmployee.employeeDocuments.map(d => ({
+        id: d.id.toString(),
+        documentType: d.documentType?.name,
+        fileName: d.fileName,
+        fileUrl: d.fileUrl,
+        documentNumber: d.documentNumber,
+        issuedDate: d.issuedDate ? d.issuedDate.toISOString().split('T')[0] : null,
+        expiryDate: d.expiryDate ? d.expiryDate.toISOString().split('T')[0] : null,
+        verified: d.verified,
+        verifiedBy: d.verifiedBy?.toString(),
+        verifiedByName: d.verifiedByUser?.employeeProfile
+          ? `${d.verifiedByUser.employeeProfile.firstName || ''} ${d.verifiedByUser.employeeProfile.lastName || ''}`.trim()
+          : d.verifiedByUser?.user?.email || '',
+        verifiedAt: d.verifiedAt,
+        uploadedAt: d.uploadedAt
+      })),
       updatedAt: profile.updatedAt
     };
 

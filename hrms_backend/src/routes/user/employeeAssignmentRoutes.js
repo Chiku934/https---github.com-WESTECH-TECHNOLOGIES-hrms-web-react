@@ -133,7 +133,7 @@ router.use(protect);
  *       500:
  *         description: Internal server error
  */
-router.get('/:companyUserId', authorize(['super_admin', 'admin', 'hr', 'manager']), getEmployeeAssignments);
+router.get('/:companyUserId', authorize(['super-admin', 'admin', 'hr', 'manager']), getEmployeeAssignments);
 
 /**
  * @swagger
@@ -253,7 +253,7 @@ router.get('/:companyUserId', authorize(['super_admin', 'admin', 'hr', 'manager'
  *       500:
  *         description: Internal server error
  */
-router.get('/:companyUserId/current', authorize(['super_admin', 'admin', 'hr', 'manager']), getCurrentAssignment);
+router.get('/:companyUserId/current', authorize(['super-admin', 'admin', 'hr', 'manager']), getCurrentAssignment);
 
 /**
  * @swagger
@@ -406,7 +406,7 @@ router.get('/:companyUserId/current', authorize(['super_admin', 'admin', 'hr', '
  *       500:
  *         description: Internal server error
  */
-router.post('/:companyUserId', authorize(['super_admin', 'admin', 'hr']), createEmployeeAssignment);
+router.post('/:companyUserId', authorize(['super-admin', 'admin', 'hr']), createEmployeeAssignment);
 
 /**
  * @swagger
@@ -555,7 +555,7 @@ router.post('/:companyUserId', authorize(['super_admin', 'admin', 'hr']), create
  *       500:
  *         description: Internal server error
  */
-router.put('/:id', authorize(['super_admin', 'admin', 'hr']), updateEmployeeAssignment);
+router.put('/:id', authorize(['super-admin', 'admin', 'hr']), updateEmployeeAssignment);
 
 /**
  * @swagger
@@ -594,7 +594,7 @@ router.put('/:id', authorize(['super_admin', 'admin', 'hr']), updateEmployeeAssi
  *       500:
  *         description: Internal server error
  */
-router.delete('/:id', authorize(['super_admin', 'admin', 'hr']), deleteEmployeeAssignment);
+router.delete('/:id', authorize(['super-admin', 'admin', 'hr']), deleteEmployeeAssignment);
 
 /**
  * @swagger
@@ -720,6 +720,6 @@ router.delete('/:id', authorize(['super_admin', 'admin', 'hr']), deleteEmployeeA
  *       500:
  *         description: Internal server error
  */
-router.get('/department/:departmentId', authorize(['super_admin', 'admin', 'hr', 'manager']), getAssignmentsByDepartment);
+router.get('/department/:departmentId', authorize(['super-admin', 'admin', 'hr', 'manager']), getAssignmentsByDepartment);
 
 module.exports = router;

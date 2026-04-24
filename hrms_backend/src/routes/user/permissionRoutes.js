@@ -174,7 +174,7 @@ router.get('/:id', getPermissionById);
  *       500:
  *         description: Internal server error
  */
-router.post('/', authorize('super_admin'), createPermission);
+router.post('/', authorize('super-admin'), createPermission);
 
 /**
  * @swagger
@@ -249,7 +249,7 @@ router.post('/', authorize('super_admin'), createPermission);
  *       500:
  *         description: Internal server error
  */
-router.put('/:id', authorize('super_admin'), updatePermission);
+router.put('/:id', authorize('super-admin'), updatePermission);
 
 /**
  * @swagger
@@ -288,7 +288,7 @@ router.put('/:id', authorize('super_admin'), updatePermission);
  *       500:
  *         description: Internal server error
  */
-router.delete('/:id', authorize('super_admin'), deletePermission);
+router.delete('/:id', authorize('super-admin'), deletePermission);
 
 /**
  * @swagger

@@ -177,7 +177,7 @@ router.get('/:id', (req, res, next) => {
  * /employees:
  *   post:
  *     summary: Create new employee
- *     description: Create a new employee record (HR and Super Admin only)
+ *     description: Create a new employee record (HR, Super Admin, and Company Admin only)
  *     tags: [Employees]
  *     security:
  *       - bearerAuth: []
@@ -245,14 +245,14 @@ router.get('/:id', (req, res, next) => {
  *       500:
  *         description: Server error
  */
-router.post('/', authorize('hr', 'super-admin'), createEmployee);
+router.post('/', authorize('hr', 'super-admin', 'company-admin'), createEmployee);
 
 /**
  * @swagger
  * /employees/{id}:
  *   put:
  *     summary: Update employee
- *     description: Update employee details by ID (HR and Super Admin only)
+ *     description: Update employee details by ID (HR, Super Admin, and Company Admin only)
  *     tags: [Employees]
  *     security:
  *       - bearerAuth: []
@@ -316,14 +316,14 @@ router.post('/', authorize('hr', 'super-admin'), createEmployee);
  *       500:
  *         description: Server error
  */
-router.put('/:id', authorize('hr', 'super-admin'), updateEmployee);
+router.put('/:id', authorize('hr', 'super-admin', 'company-admin'), updateEmployee);
 
 /**
  * @swagger
  * /employees/{id}:
  *   delete:
  *     summary: Delete employee
- *     description: Delete employee by ID (HR and Super Admin only)
+ *     description: Delete employee by ID (HR, Super Admin, and Company Admin only)
  *     tags: [Employees]
  *     security:
  *       - bearerAuth: []
@@ -357,6 +357,6 @@ router.put('/:id', authorize('hr', 'super-admin'), updateEmployee);
  *       500:
  *         description: Server error
  */
-router.delete('/:id', authorize('hr', 'super-admin'), deleteEmployee);
+router.delete('/:id', authorize('hr', 'super-admin', 'company-admin'), deleteEmployee);
 
 module.exports = router;

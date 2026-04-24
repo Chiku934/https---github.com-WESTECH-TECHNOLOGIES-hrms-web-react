@@ -8,7 +8,7 @@ const getAllCompanies = async (req, res) => {
   try {
     // Check if user is super admin (you may need to implement proper role check)
     const userRole = req.user?.role;
-    if (userRole !== 'super_admin') {
+    if (userRole !== 'super-admin') {
       return res.status(403).json({
         status: 'error',
         message: 'Unauthorized: Only super admins can access companies'
@@ -73,7 +73,7 @@ const getCompanyById = async (req, res) => {
     const userCompanyId = req.user?.companyId;
     const userRole = req.user?.role;
     
-    if (userRole !== 'super_admin' && userCompanyId !== companyId) {
+    if (userRole !== 'super-admin' && userCompanyId !== companyId) {
       return res.status(403).json({
         status: 'error',
         message: 'Unauthorized: You can only access your own company'
@@ -144,7 +144,7 @@ const getCompanyById = async (req, res) => {
 const createCompany = async (req, res) => {
   try {
     const userRole = req.user?.role;
-    if (userRole !== 'super_admin') {
+    if (userRole !== 'super-admin') {
       return res.status(403).json({
         status: 'error',
         message: 'Unauthorized: Only super admins can create companies'
@@ -226,7 +226,7 @@ const updateCompany = async (req, res) => {
     const companyId = req.params.id;
     const userRole = req.user?.role;
     
-    if (userRole !== 'super_admin') {
+    if (userRole !== 'super-admin') {
       return res.status(403).json({
         status: 'error',
         message: 'Unauthorized: Only super admins can update companies'
@@ -314,7 +314,7 @@ const deleteCompany = async (req, res) => {
     const companyId = req.params.id;
     const userRole = req.user?.role;
     
-    if (userRole !== 'super_admin') {
+    if (userRole !== 'super-admin') {
       return res.status(403).json({
         status: 'error',
         message: 'Unauthorized: Only super admins can delete companies'
@@ -366,7 +366,7 @@ const deleteCompany = async (req, res) => {
 const searchCompanies = async (req, res) => {
   try {
     const userRole = req.user?.role;
-    if (userRole !== 'super_admin') {
+    if (userRole !== 'super-admin') {
       return res.status(403).json({
         status: 'error',
         message: 'Unauthorized: Only super admins can search companies'

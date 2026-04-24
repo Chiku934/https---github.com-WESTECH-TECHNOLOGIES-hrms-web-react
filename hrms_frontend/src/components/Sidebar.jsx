@@ -25,7 +25,6 @@ function getSectionShortName(label) {
     'holiday list': 'Holiday',
     'project management': 'Project',
     'team setup': 'Team',
-    'employee management': 'Emp',
     'support': 'Support',
     'helpdesk': 'Help',
     'performance': 'Perf',

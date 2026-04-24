@@ -161,7 +161,7 @@ router.use(protect);
  *       500:
  *         description: Internal server error
  */
-router.get('/', authorize(['super_admin', 'admin', 'hr']), getAuditLogsController);
+router.get('/', authorize(['super-admin', 'admin', 'hr']), getAuditLogsController);
 
 /**
  * @swagger
@@ -260,7 +260,7 @@ router.get('/', authorize(['super_admin', 'admin', 'hr']), getAuditLogsControlle
  *       500:
  *         description: Internal server error
  */
-router.get('/:id', authorize(['super_admin', 'admin', 'hr']), getAuditLogById);
+router.get('/:id', authorize(['super-admin', 'admin', 'hr']), getAuditLogById);
 
 /**
  * @swagger
@@ -338,7 +338,7 @@ router.get('/:id', authorize(['super_admin', 'admin', 'hr']), getAuditLogById);
  *       500:
  *         description: Internal server error
  */
-router.get('/statistics', authorize(['super_admin', 'admin', 'hr']), getAuditLogStatistics);
+router.get('/statistics', authorize(['super-admin', 'admin', 'hr']), getAuditLogStatistics);
 
 /**
  * @swagger
@@ -457,6 +457,6 @@ router.get('/statistics', authorize(['super_admin', 'admin', 'hr']), getAuditLog
  *       500:
  *         description: Internal server error
  */
-router.get('/search', authorize(['super_admin', 'admin', 'hr']), searchAuditLogs);
+router.get('/search', authorize(['super-admin', 'admin', 'hr']), searchAuditLogs);
 
 module.exports = router;

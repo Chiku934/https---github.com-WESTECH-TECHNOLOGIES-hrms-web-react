@@ -9,7 +9,7 @@ const getAllUsers = async (req, res) => {
   try {
     // Check if user is super admin
     const userRole = req.user?.role;
-    if (userRole !== 'super_admin') {
+    if (userRole !== 'super-admin') {
       return res.status(403).json({
         status: 'error',
         message: 'Unauthorized: Only super admins can access all users'
@@ -88,7 +88,7 @@ const getUserById = async (req, res) => {
     const currentUserId = req.user?.userId;
     const userRole = req.user?.role;
     
-    if (userRole !== 'super_admin' && currentUserId !== userId) {
+    if (userRole !== 'super-admin' && currentUserId !== userId) {
       return res.status(403).json({
         status: 'error',
         message: 'Unauthorized: You can only access your own profile'
@@ -179,7 +179,7 @@ const getUserById = async (req, res) => {
 const createUser = async (req, res) => {
   try {
     const userRole = req.user?.role;
-    if (userRole !== 'super_admin') {
+    if (userRole !== 'super-admin') {
       return res.status(403).json({
         status: 'error',
         message: 'Unauthorized: Only super admins can create users'
@@ -262,7 +262,7 @@ const updateUser = async (req, res) => {
     const userRole = req.user?.role;
     
     // Only super admin or the user themselves can update
-    if (userRole !== 'super_admin' && currentUserId !== userId) {
+    if (userRole !== 'super-admin' && currentUserId !== userId) {
       return res.status(403).json({
         status: 'error',
         message: 'Unauthorized: You can only update your own profile'
@@ -305,7 +305,7 @@ const updateUser = async (req, res) => {
     if (mfaEnabled !== undefined) updateData.mfaEnabled = mfaEnabled;
     
     // Only super admin can update password
-    if (password && userRole === 'super_admin') {
+    if (password && userRole === 'super-admin') {
       updateData.passwordHash = await hashPassword(password);
     }
 
@@ -353,7 +353,7 @@ const deleteUser = async (req, res) => {
     const userId = req.params.id;
     const userRole = req.user?.role;
     
-    if (userRole !== 'super_admin') {
+    if (userRole !== 'super-admin') {
       return res.status(403).json({
         status: 'error',
         message: 'Unauthorized: Only super admins can delete users'
@@ -405,7 +405,7 @@ const deleteUser = async (req, res) => {
 const searchUsers = async (req, res) => {
   try {
     const userRole = req.user?.role;
-    if (userRole !== 'super_admin') {
+    if (userRole !== 'super-admin') {
       return res.status(403).json({
         status: 'error',
         message: 'Unauthorized: Only super admins can search users'

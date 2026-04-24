@@ -227,8 +227,26 @@ export async function saveUserSetupUsers(users) {
         
         // Check if user has an ID that indicates it exists in backend
         // Frontend IDs like 'u-001' need to be mapped to backend IDs
-        // For simplicity, we'll check if ID starts with 'u-' (frontend) or is numeric (backend)
-        const isNewUser = !user.id || user.id.startsWith('u-') || isNaN(parseInt(user.id));
+        // u-001, u-002, etc. are existing users with synthetic IDs
+        // Plain numeric IDs are also existing users
+        let backendId = null;
+        let isNewUser = true;
+        
+        if (user.id) {
+          if (user.id.startsWith('u-')) {
+            // Extract numeric part from synthetic ID (e.g., '001' from 'u-001')
+            const numericPart = user.id.substring(2); // Remove 'u-'
+            const parsedId = parseInt(numericPart, 10);
+            if (!isNaN(parsedId)) {
+              backendId = parsedId.toString();
+              isNewUser = false;
+            }
+          } else if (!isNaN(parseInt(user.id, 10))) {
+            // Already a numeric ID
+            backendId = user.id;
+            isNewUser = false;
+          }
+        }
         
         if (isNewUser) {
           // Create new employee
@@ -236,8 +254,8 @@ export async function saveUserSetupUsers(users) {
           console.log(`Created new employee: ${user.fullName}`);
         } else {
           // Update existing employee
-          await employeeAPI.update(user.id, backendData);
-          console.log(`Updated employee ${user.id}: ${user.fullName}`);
+          await employeeAPI.update(backendId, backendData);
+          console.log(`Updated employee ${backendId}: ${user.fullName}`);
         }
         
         successCount++;
@@ -344,9 +362,16 @@ export async function saveUserSetupDocuments(documents) {
     // Process documents for each user
     for (const [userId, userDocs] of Object.entries(documentsByUser)) {
       try {
-        // Extract the numeric part from userId (e.g., 'u-001' -> '001')
-        const userIdMatch = userId.match(/u-(\d+)/);
-        const employeeId = userIdMatch ? userIdMatch[1] : userId;
+        // Extract the numeric part from userId (e.g., 'u-001' -> 1)
+        // Use same logic as saveUserSetupUsers for consistency
+        let employeeId = userId;
+        if (userId.startsWith('u-')) {
+          const numericPart = userId.substring(2); // Remove 'u-'
+          const parsedId = parseInt(numericPart, 10);
+          if (!isNaN(parsedId)) {
+            employeeId = parsedId.toString();
+          }
+        }
         
         // Transform documents to backend format
         const backendDocuments = userDocs.map(transformUserSetupDocumentToBackend);

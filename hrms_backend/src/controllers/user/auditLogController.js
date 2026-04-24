@@ -25,14 +25,14 @@ const getAuditLogsController = async (req, res) => {
     
     if (companyId) {
       // For non-super admins, restrict to their company
-      if (req.user.role !== 'super_admin' && req.user.companyId !== companyId) {
+      if (req.user.role !== 'super-admin' && req.user.companyId !== companyId) {
         return res.status(403).json({
           status: 'error',
           message: 'You can only view audit logs for your own company'
         });
       }
       filters.companyId = companyId;
-    } else if (req.user.role !== 'super_admin') {
+    } else if (req.user.role !== 'super-admin') {
       // Non-super admins can only see logs for their company
       filters.companyId = req.user.companyId;
     }
@@ -146,7 +146,7 @@ const getAuditLogById = async (req, res) => {
     }
 
     // Check permissions
-    if (req.user.role !== 'super_admin' && auditLog.companyId && auditLog.companyId.toString() !== req.user.companyId) {
+    if (req.user.role !== 'super-admin' && auditLog.companyId && auditLog.companyId.toString() !== req.user.companyId) {
       return res.status(403).json({
         status: 'error',
         message: 'You can only view audit logs for your own company'
@@ -202,7 +202,7 @@ const getAuditLogStatistics = async (req, res) => {
     // Build where clause based on user permissions
     const whereClause = {};
     
-    if (req.user.role !== 'super_admin') {
+    if (req.user.role !== 'super-admin') {
       whereClause.companyId = BigInt(req.user.companyId);
     }
     
@@ -332,7 +332,7 @@ const searchAuditLogs = async (req, res) => {
       ]
     };
     
-    if (req.user.role !== 'super_admin') {
+    if (req.user.role !== 'super-admin') {
       whereClause.companyId = BigInt(req.user.companyId);
     }
 
