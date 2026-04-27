@@ -31,16 +31,34 @@ export const AuthProvider = ({ children }) => {
           try {
             const userData = await authService.getCurrentUser();
             if (userData.data) {
-              const freshUser = userData.data.user || userData.data;
-              const freshCompany = userData.data.company;
+              const responseData = userData.data;
+              const freshUser = responseData.user || responseData;
+              const freshCompany = responseData.company;
+              const roles = responseData.roles || [];
               
-              setUser(freshUser);
+              // Attach roles to user object for easier access
+              const userWithRoles = {
+                ...freshUser,
+                roles: roles
+              };
+              
+              setUser(userWithRoles);
               setCompany(freshCompany);
               
               // Update localStorage with fresh data
-              localStorage.setItem('user', JSON.stringify(freshUser));
+              localStorage.setItem('user', JSON.stringify(userWithRoles));
               if (freshCompany) {
                 localStorage.setItem('company', JSON.stringify(freshCompany));
+              }
+              
+              // Extract and store role from backend response
+              try {
+                // Import the refreshRoleFromBackend function
+                const { refreshRoleFromBackend } = await import('../data/navigation/index.js');
+                await refreshRoleFromBackend();
+                console.log('Role refreshed and stored from backend');
+              } catch (roleError) {
+                console.warn('Failed to refresh role from backend:', roleError);
               }
             }
           } catch (refreshError) {
@@ -70,9 +88,53 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.login(email, password, company_slug);
       const { access_token, refresh_token, user: userData, company: companyData } = response.data;
       
-      // Update state
+      // Update state with initial user data
       setUser(userData);
       setCompany(companyData);
+      
+      // Also fetch complete user data with roles from /auth/me endpoint
+      try {
+        const userDataWithRoles = await authService.getCurrentUser();
+        if (userDataWithRoles.data) {
+          const responseData = userDataWithRoles.data;
+          const freshUser = responseData.user || responseData;
+          const freshCompany = responseData.company;
+          const roles = responseData.roles || [];
+          
+          // Attach roles to user object for easier access
+          const userWithRoles = {
+            ...freshUser,
+            roles: roles
+          };
+          
+          // Update state with complete user data including roles
+          setUser(userWithRoles);
+          setCompany(freshCompany);
+          
+          // Update localStorage with complete user data
+          localStorage.setItem('user', JSON.stringify(userWithRoles));
+          if (freshCompany) {
+            localStorage.setItem('company', JSON.stringify(freshCompany));
+          }
+        }
+      } catch (fetchError) {
+        console.warn('Failed to fetch user data with roles after login:', fetchError);
+        // Continue with basic user data
+        localStorage.setItem('user', JSON.stringify(userData));
+        if (companyData) {
+          localStorage.setItem('company', JSON.stringify(companyData));
+        }
+      }
+      
+      // Refresh and store role from backend after login
+      try {
+        // Import the refreshRoleFromBackend function
+        const { refreshRoleFromBackend } = await import('../data/navigation/index.js');
+        await refreshRoleFromBackend();
+        console.log('Role refreshed and stored after login');
+      } catch (roleError) {
+        console.warn('Failed to refresh role after login:', roleError);
+      }
       
       return response;
     } catch (err) {
@@ -148,13 +210,70 @@ export const AuthProvider = ({ children }) => {
   const getUserRole = useCallback(() => {
     if (!user) return null;
     
+    // Check if user has roles array (from API response)
+    if (user.roles && Array.isArray(user.roles)) {
+      for (const role of user.roles) {
+        if (role && role.name) {
+          const roleName = role.name.toLowerCase().trim();
+          
+          // Check for super admin variations
+          if (
+            roleName === 'super_admin' ||
+            roleName === 'super admin' ||
+            roleName === 'superadmin' ||
+            roleName === 'super administrator' ||
+            roleName === 'super-administrator' ||
+            roleName === 'super_administrator' ||
+            (roleName.includes('super') && roleName.includes('admin')) ||
+            roleName === 'sa' ||
+            roleName === 'super'
+          ) {
+            return 'SUPER_ADMIN';
+          }
+          
+          // Check for company admin variations
+          if (
+            roleName === 'company_admin' ||
+            roleName === 'company admin' ||
+            roleName === 'companyadmin' ||
+            roleName === 'company administrator' ||
+            roleName === 'company-administrator' ||
+            roleName === 'company_administrator' ||
+            (roleName.includes('company') && roleName.includes('admin')) ||
+            roleName === 'ca' ||
+            roleName === 'company'
+          ) {
+            return 'COMPANY_ADMIN';
+          }
+          
+          // Check for admin variations
+          if (
+            roleName === 'admin' ||
+            roleName === 'administrator' ||
+            roleName === 'system admin' ||
+            roleName === 'system administrator' ||
+            roleName === 'system_admin' ||
+            roleName === 'system-administrator' ||
+            roleName === 'system_administrator' ||
+            roleName === 'hr admin' ||
+            roleName === 'hradmin' ||
+            roleName === 'hr_admin'
+          ) {
+            return 'COMPANY_ADMIN';
+          }
+        }
+      }
+    }
+    
+    // Fallback to legacy boolean fields (for backward compatibility)
     if (user.is_super_admin) {
       return 'SUPER_ADMIN';
     } else if (user.is_company_admin) {
       return 'COMPANY_ADMIN';
-    } else {
-      return 'EMPLOYEE';
     }
+    
+    // Default to employee
+    return 'EMPLOYEE';
   }, [user]);
 
   /**

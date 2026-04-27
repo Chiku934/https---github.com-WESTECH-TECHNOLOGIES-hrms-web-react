@@ -854,10 +854,9 @@ body.dashboard-page {
 }
 
 .stat-value {
-    font-size: 32px;
-    font-weight: 700;
+    font-size: 20px;
+    font-weight: 600;
     color: #111827;
-    margin-bottom: 15px;
 }
 
 .stat-subtext {
@@ -2830,8 +2829,7 @@ p {
 .profile-main-card {
     background-color: #ffffff;
     border-radius: 20px;
-    padding: 25px;
-    margin-bottom: 20px;
+    padding: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     width: 100%;
     border: 1px solid #e2e8f0;

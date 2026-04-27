@@ -1,9 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Icon from './Icon';
 import { getSidebarSectionsForRole } from '../data/navigation/sidebarConfig.js';
 import { resolveRoleFromStorage, resolveCurrentRoleAsync } from '../data/navigation/index.js';
 import { ROLES } from '../app/config/roles';
+import { useAuth } from '../contexts/AuthContext';
+
+// Helper function to get effective role (view mode if set, otherwise actual role)
+function getEffectiveRole() {
+  if (typeof window === 'undefined') {
+    return resolveRoleFromStorage();
+  }
+  
+  const viewMode = window.localStorage.getItem('hrms_view_mode');
+  if (viewMode && [ROLES.SUPER_ADMIN, ROLES.COMPANY_ADMIN, ROLES.EMPLOYEE].includes(viewMode)) {
+    return viewMode;
+  }
+  
+  return resolveRoleFromStorage();
+}
 
 // Helper function to generate short names for sections when sidebar is collapsed
 function getSectionShortName(label) {
@@ -272,9 +287,11 @@ export default function Sidebar({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth(); // Get user data from AuthContext
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false); // Changed to false for collapsed by default
-  const [role, setRole] = useState(resolveRoleFromStorage()); // Initial role from localStorage
-  const [sidebarSections, setSidebarSections] = useState(getSidebarSectionsForRole(resolveRoleFromStorage()));
+  const effectiveRole = getEffectiveRole();
+  const [actualRole, setActualRole] = useState(effectiveRole); // Store actual role from backend
+  const [sidebarSections, setSidebarSections] = useState(getSidebarSectionsForRole(effectiveRole));
   const hiddenSubmenuKeySet = new Set(hiddenSubmenuKeys);
 
   // Fetch fresh role from backend on component mount
@@ -284,13 +301,19 @@ export default function Sidebar({
     const fetchRoleFromBackend = async () => {
       try {
         const freshRole = await resolveCurrentRoleAsync();
-        if (isMounted && freshRole !== role) {
-          setRole(freshRole);
-          setSidebarSections(getSidebarSectionsForRole(freshRole));
+        if (isMounted) {
+          setActualRole(freshRole); // Always update actual role
+          
+          // Update sidebar sections based on view mode (if set) or actual role
+          const viewMode = window.localStorage.getItem('hrms_view_mode');
+          const roleForSidebar = viewMode && [ROLES.SUPER_ADMIN, ROLES.COMPANY_ADMIN, ROLES.EMPLOYEE].includes(viewMode)
+            ? viewMode
+            : freshRole;
+          setSidebarSections(getSidebarSectionsForRole(roleForSidebar));
         }
       } catch (error) {
         console.warn('Failed to fetch role from backend, using cached role:', error);
-        // Keep using the localStorage role
+        // Keep using the current role
       }
     };
 
@@ -301,13 +324,60 @@ export default function Sidebar({
     };
   }, []);
 
+  // Get role for sidebar navigation (view mode if set, otherwise actual role)
+  const getRoleForSidebar = () => {
+    const viewMode = window.localStorage.getItem('hrms_view_mode');
+    if (viewMode && [ROLES.SUPER_ADMIN, ROLES.COMPANY_ADMIN, ROLES.EMPLOYEE].includes(viewMode)) {
+      return viewMode;
+    }
+    return actualRole;
+  };
+
+  // Get role for profile display (always actual role, never view mode)
+  const getRoleForProfile = () => {
+    return actualRole;
+  };
+
+  const roleForSidebar = getRoleForSidebar();
+  const roleForProfile = getRoleForProfile();
+  
+  // Get user profile data
+  const userProfile = user?.profile;
+  const userName = userProfile?.full_name || userProfile?.first_name
+    ? `${userProfile.first_name || ''}${userProfile.middle_name ? ' ' + userProfile.middle_name : ''} ${userProfile.last_name || ''}`.trim()
+    : null;
+  
+  const userEmail = user?.email || '';
+  const userPhotoUrl = userProfile?.photo_url;
+  
+  // Fallback to role display if no name available
   const roleDisplayName = {
     [ROLES.SUPER_ADMIN]: 'Super Admin',
     [ROLES.COMPANY_ADMIN]: 'Company Admin',
     [ROLES.EMPLOYEE]: 'Employee',
-  }[role] || 'User';
-
-  const userInitials = roleDisplayName.split(' ').map(word => word[0]).join('').toUpperCase();
+  }[roleForProfile] || 'User';
+  
+  const displayName = userName || roleDisplayName;
+  const displayRole = roleForProfile.replace('-', ' ');
+  
+  // Calculate initials from name or role (max 2 letters)
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const words = name.split(' ').filter(word => word.length > 0);
+    if (words.length === 0) return 'U';
+    
+    // For single word, take first letter
+    if (words.length === 1) {
+      return words[0][0].toUpperCase();
+    }
+    
+    // For multiple words, take first letter of first and last word (max 2 letters)
+    const firstLetter = words[0][0].toUpperCase();
+    const lastLetter = words[words.length - 1][0].toUpperCase();
+    return firstLetter + lastLetter;
+  };
+  
+  const userInitials = getInitials(userName || roleDisplayName);
 
   return (
     <div className={`sidebar ${isSidebarExpanded ? 'expanded' : 'collapsed'}`}>
@@ -325,7 +395,7 @@ export default function Sidebar({
             <div className="sidebar-brand-logo">HR</div>
           )}
         </div>
-        <button 
+        <button
           className="sidebar-toggle"
           onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
           aria-label={isSidebarExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
@@ -337,12 +407,20 @@ export default function Sidebar({
       {/* User Profile */}
       <div className="sidebar-user-profile">
         <div className="sidebar-user-avatar">
-          {userInitials}
+          {userPhotoUrl ? (
+            <img
+              src={userPhotoUrl}
+              alt={displayName}
+              className="sidebar-user-avatar-img"
+            />
+          ) : (
+            <span className="sidebar-user-avatar-initials">{userInitials}</span>
+          )}
         </div>
         {isSidebarExpanded && (
           <div className="sidebar-user-info">
-            <div className="sidebar-user-name">{roleDisplayName}</div>
-            <div className="sidebar-user-role">{role.replace('-', ' ')}</div>
+            <div className="sidebar-user-name">{displayName}</div>
+            <div className="sidebar-user-role">{userEmail || displayRole}</div>
           </div>
         )}
       </div>
@@ -356,7 +434,7 @@ export default function Sidebar({
             activeKey={activeKey}
             location={location}
             isExpanded={isSidebarExpanded}
-            role={role}
+            role={roleForSidebar}
           />
         ))}
       </div>

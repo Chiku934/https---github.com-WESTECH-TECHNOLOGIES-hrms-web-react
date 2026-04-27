@@ -21,8 +21,7 @@
                 .profile-main-card {
                     background-color: #ffffff; /* White */
                     border-radius: 20px;
-                    padding: 25px;
-                    margin-bottom: 20px;
+                    padding: 10px;
                     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
                     border: 1px solid #e2e8f0;
                 }

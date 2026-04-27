@@ -26,6 +26,7 @@ import MyTeamHiring from '../../pages/MyTeamHiring';
 import MyTeamTimesheet from '../../pages/MyTeamTimesheet';
 import Requests from '../../pages/Requests';
 import Payroll from '../../pages/Payroll';
+import UserProfile from '../../pages/UserProfile';
 import FeaturePlaceholderPage from '../../features/shared/components/FeaturePlaceholderPage';
 import SuperAdminMasterSettings from '../../features/super-admin/pages/MasterSettings';
 import SuperAdminPackages from '../../features/super-admin/pages/Packages';
@@ -174,7 +175,7 @@ const rawRouteConfig = [
   { path: ROUTES.superAdminLocationMaster, element: <SuperAdminMasterSettings /> },
   { path: ROUTES.superAdminReports, element: <SuperAdminReports /> },
   { path: ROUTES.companySetup, element: <CompanySetup /> },
-  { path: ROUTES.userSetup, element: <Navigate to={ROUTES.companySetup} replace /> },
+  { path: ROUTES.userSetup, element: <UserProfile /> },
   { path: ROUTES.companyAdminMaster, element: <CompanyAdminMaster /> },
   { path: ROUTES.companyAdminAttendance, element: <CompanyAdminAttendance /> },
   { path: ROUTES.companyAdminHolidayList, element: <CompanyAdminHolidayList /> },

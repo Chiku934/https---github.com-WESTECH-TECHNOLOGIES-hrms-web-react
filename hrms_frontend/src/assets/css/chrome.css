@@ -12,10 +12,13 @@
 .myteam-avatar,.attendance-avatar{width:26px;height:26px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.55)}
 .myteam-profile-dropdown{position:absolute;top:calc(100% + 10px);right:0;min-width:150px;padding:6px;background:#fff;border:1px solid rgba(148,163,184,.22);border-radius:14px;box-shadow:0 16px 36px rgba(15,23,42,.15);opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .16s ease,transform .16s ease,visibility .16s ease;z-index:25}
 .myteam-profile-menu:hover .myteam-profile-dropdown,.myteam-profile-menu:focus-within .myteam-profile-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
-.myteam-profile-dropdown-item{display:flex;width:100%;align-items:center;justify-content:flex-start;border:0;background:transparent;color:#1f2937;font-size:12px;font-weight:700;text-decoration:none;padding:10px 12px;border-radius:10px;cursor:pointer}
+.myteam-profile-dropdown-item{display:flex;width:100%;align-items:center;justify-content:flex-start;border:0;background:transparent;color:#1f2937;font-size:12px;font-weight:700;text-decoration:none;padding:10px 12px;border-radius:10px;cursor:pointer;gap:8px}
 .myteam-profile-dropdown-item:hover{background:#eef2ff;color:#4f46e5}
 .myteam-profile-dropdown-item.danger{color:#dc2626}
 .myteam-profile-dropdown-item.danger:hover{background:#fef2f2;color:#b91c1c}
+.myteam-profile-dropdown-divider{height:1px;background:rgba(148,163,184,.22);margin:6px 12px;pointer-events:none}
+.myteam-profile-dropdown-item.active-view{background:#f0f9ff;color:#0369a1;cursor:default}
+.myteam-profile-dropdown-item.active-view:hover{background:#f0f9ff;color:#0369a1}
 .myteam-module-nav,.attendance-module-nav{height:34px;background:#fff;border-bottom:1px solid #e3e8f2;display:flex;align-items:center;padding:0 16px 0 18px;gap:22px;white-space:nowrap}
 .myteam-module-nav a,.attendance-module-nav a{color:#7f889a;text-decoration:none;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;position:relative;padding:10px 0 9px;flex:0 0 auto}
 .myteam-module-nav a.active,.attendance-module-nav a.active{color:#2b2f38}
