@@ -19,7 +19,7 @@ export const companyAdminQuickActions = [
 ];
 
 export const companyAdminModuleCards = [
-  { label: 'User Setup', description: 'Manage employees, documents, and addresses.' },
+  { label: 'Company Setup', description: 'Manage companies and user links with company-aware verification.' },
   { label: 'Master', description: 'Keep departments and designations organized.' },
   { label: 'Leave Management', description: 'Handle policies and leave requests.' },
   { label: 'Attendance', description: 'Review marks, shifts, and regularization.' },

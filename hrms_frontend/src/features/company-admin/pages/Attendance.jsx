@@ -9,7 +9,7 @@ import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import { ROLES } from '../../../app/config/roles';
 import '../../super-admin/styles/packages.css';
-import { loadUserSetupUsers } from '../../user-setup/services/userSetupService';
+import { loadCompanyRoster } from '../../company-setup/services/companySetupService';
 import {
   companyAdminAttendanceHighlights,
   companyAdminAttendanceList,
@@ -264,9 +264,9 @@ export default function CompanyAdminAttendance() {
     async function loadEmployeeOptions() {
       setLoadingEmployees(true);
       try {
-        const users = await loadUserSetupUsers();
+        const users = await loadCompanyRoster();
         const roster = users
-          .filter((item) => [ROLES.COMPANY_ADMIN, ROLES.HR, ROLES.EMPLOYEE].includes(item.role))
+          .filter((item) => [ROLES.COMPANY_ADMIN, ROLES.SUPER_ADMIN, ROLES.EMPLOYEE].includes(item.role))
           .map((item) => ({
             id: item.id,
             fullName: item.fullName,
@@ -801,4 +801,3 @@ export default function CompanyAdminAttendance() {
     </DashboardShell>
   );
 }
-

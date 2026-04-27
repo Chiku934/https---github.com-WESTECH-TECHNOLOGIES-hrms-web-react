@@ -1,4 +1,4 @@
-import { ROLES } from '../../app/config/roles';
+import { ROLES, normalizeRole } from '../../app/config/roles';
 import { ROUTES } from '../../router/routePaths';
 
 const createItem = (label, path, activeKey, children = []) => ({
@@ -60,13 +60,13 @@ const companyAdminTimesheetItems = [
 const superAdminSections = [
   dashboardSection,
   createSection({
-    key: 'user-setup',
-    label: 'User Setup',
+    key: 'company-setup',
+    label: 'Company Setup',
     icon: 'user',
     items: [
-      createItem('Overview', `${ROUTES.userSetup}#overview`, 'user-setup-overview'),
-      createItem('User List', `${ROUTES.userSetup}#users`, 'user-setup-users'),
-      createItem('Create User', `${ROUTES.userSetup}#create`, 'user-setup-create'),
+      createItem('Overview', ROUTES.companySetup, 'company-setup-overview'),
+      createItem('Companies', `${ROUTES.companySetup}#companies`, 'company-setup-companies'),
+      createItem('Company Users', `${ROUTES.companySetup}#users`, 'company-setup-users'),
     ],
   }),
   createSection({
@@ -99,32 +99,6 @@ const superAdminSections = [
       createItem('Quarterly Report', `${ROUTES.superAdminReports}#quarterly`, 'super-admin-reports-quarterly'),
       createItem('Yearly Report', `${ROUTES.superAdminReports}#yearly`, 'super-admin-reports-yearly'),
     ],
-  }),
-];
-
-const subAdminSections = [
-  dashboardSection,
-  createSection({
-    key: 'user-setup',
-    label: 'Employee Management',
-    icon: 'user',
-    items: [
-      createItem('Overview', `${ROUTES.userSetup}#overview`, 'user-setup-overview'),
-      createItem('Employee List', `${ROUTES.userSetup}#users`, 'user-setup-users'),
-      createItem('Create Employee', `${ROUTES.userSetup}#create`, 'user-setup-create'),
-    ],
-  }),
-  createSection({
-    key: 'permissions',
-    label: 'Permissions',
-    icon: 'lock',
-    items: [createItem('Role Permissions', ROUTES.subAdminPermissions, 'sub-admin-permissions')],
-  }),
-  createSection({
-    key: 'reports',
-    label: 'Reports',
-    icon: 'chart-line',
-    items: [createItem('Reports', ROUTES.subAdminReports, 'sub-admin-reports')],
   }),
 ];
 
@@ -169,76 +143,6 @@ const employeeSections = [
   }),
 ];
 
-const managerSections = [
-  dashboardSection,
-  createSection({
-    key: 'my-team',
-    label: 'My Team',
-    icon: 'people-group',
-    items: [createItem('My Team', ROUTES.myTeamSummary, 'myteam_summary')],
-  }),
-  createSection({
-    key: 'my-team-timesheet',
-    label: 'My Team Timesheet',
-    icon: 'clipboard',
-    activeKeys: ['myteam_timesheet', ...managerTimesheetItems.map((item) => item.activeKey)],
-    items: managerTimesheetItems,
-  }),
-  createSection({
-    key: 'my-team-attendance',
-    label: 'My Team Attendance',
-    icon: 'clock',
-    items: [createItem('My Team Attendance', ROUTES.myTeamAttendance, 'myteam_attendance')],
-  }),
-  createSection({
-    key: 'my-team-leave',
-    label: 'My Team Leave',
-    icon: 'calendar',
-    items: [createItem('My Team Leave', ROUTES.myTeamLeave, 'myteam_leave_overview')],
-  }),
-  createSection({
-    key: 'project-management',
-    label: 'Project Management',
-    icon: 'briefcase',
-    items: [createItem('Project Management', ROUTES.projects, 'projects')],
-  }),
-];
-
-const hrSections = [
-  dashboardSection,
-  createSection({
-    key: 'employee-management',
-    label: 'Employee Management',
-    icon: 'users',
-    items: [createItem('Employee Management', ROUTES.hrEmployeeManagement, 'hr-employee-management')],
-  }),
-  createSection({
-    key: 'leave-management',
-    label: 'Leave Management',
-    icon: 'calendar',
-    items: [createItem('Leave Management', ROUTES.hrLeaveManagement, 'hr-leave-management')],
-  }),
-  createSection({
-    key: 'attendance',
-    label: 'Attendance',
-    icon: 'clock',
-    items: [createItem('Attendance', ROUTES.hrAttendance, 'hr-attendance')],
-  }),
-  createSection({
-    key: 'timesheet-all',
-    label: 'Timesheet (All)',
-    icon: 'clipboard',
-    activeKeys: ['timesheet', ...employeeTimesheetItems.map((item) => item.activeKey)],
-    items: employeeTimesheetItems,
-  }),
-  createSection({
-    key: 'payroll',
-    label: 'Full Payroll',
-    icon: 'wallet',
-    items: [createItem('Full Payroll', ROUTES.payroll, 'payroll')],
-  }),
-];
-
 const companyAdminSections = [
   dashboardSection,
   createSection({
@@ -262,14 +166,13 @@ const companyAdminSections = [
     icon: 'users',
     activeKeys: [
       'company-admin-employee-management',
-      'user-setup-overview',
-      'user-setup-users',
-      'user-setup-create',
+      'company-setup-overview',
+      'company-setup-users',
     ],
     items: [
-      createItem('Overview', `${ROUTES.companyAdminEmployeeManagement}#overview`, 'user-setup-overview'),
-      createItem('Employee List', `${ROUTES.companyAdminEmployeeManagement}#users`, 'user-setup-users'),
-      createItem('Create Employee', `${ROUTES.companyAdminEmployeeManagement}#create`, 'user-setup-create'),
+      createItem('Overview', ROUTES.companyAdminEmployeeManagement, 'company-setup-overview'),
+      createItem('Employee List', `${ROUTES.companyAdminEmployeeManagement}#users`, 'company-setup-users'),
+      createItem('Create Employee', `${ROUTES.companyAdminEmployeeManagement}#create`, 'company-setup-users'),
     ],
   }),
   createSection({
@@ -395,14 +298,10 @@ const companyAdminSections = [
 
 export const roleSidebarSections = {
   [ROLES.SUPER_ADMIN]: superAdminSections,
-  [ROLES.SUB_ADMIN]: subAdminSections,
   [ROLES.COMPANY_ADMIN]: companyAdminSections,
-  [ROLES.HR_MANAGER]: hrSections,
-  [ROLES.HR_EXECUTIVE]: hrSections,
-  [ROLES.MANAGER]: managerSections,
   [ROLES.EMPLOYEE]: employeeSections,
 };
 
 export function getSidebarSectionsForRole(role) {
-  return roleSidebarSections[role] ?? employeeSections;
+  return roleSidebarSections[normalizeRole(role)] ?? employeeSections;
 }

@@ -2,18 +2,7 @@ export const ROLES = {
   SUPER_ADMIN: 'super-admin',
   COMPANY_ADMIN: 'company-admin',
   EMPLOYEE: 'employee',
-  // Legacy role constants kept so older code paths still compile.
-  SUB_ADMIN: 'sub-admin',
-  HR_MANAGER: 'hr-manager',
-  HR_EXECUTIVE: 'hr-executive',
-  MANAGER: 'manager',
 };
-
-export const ACTIVE_ROLES = [
-  ROLES.SUPER_ADMIN,
-  ROLES.COMPANY_ADMIN,
-  ROLES.EMPLOYEE,
-];
 
 export const ROLE_LABELS = {
   [ROLES.SUPER_ADMIN]: 'Super Admin',
@@ -28,10 +17,10 @@ export const ROLE_ORDER = [
 ];
 
 const LEGACY_ROLE_ALIASES = {
-  [ROLES.SUB_ADMIN]: ROLES.COMPANY_ADMIN,
-  [ROLES.HR_MANAGER]: ROLES.COMPANY_ADMIN,
-  [ROLES.HR_EXECUTIVE]: ROLES.COMPANY_ADMIN,
-  [ROLES.MANAGER]: ROLES.COMPANY_ADMIN,
+  'sub-admin': ROLES.COMPANY_ADMIN,
+  'hr-manager': ROLES.COMPANY_ADMIN,
+  'hr-executive': ROLES.COMPANY_ADMIN,
+  manager: ROLES.COMPANY_ADMIN,
   admin: ROLES.COMPANY_ADMIN,
   hr: ROLES.COMPANY_ADMIN,
   user: ROLES.EMPLOYEE,
@@ -44,7 +33,7 @@ export function normalizeRole(role) {
 
   const normalized = String(role).toLowerCase();
 
-  if (ACTIVE_ROLES.includes(normalized)) {
+  if ([ROLES.SUPER_ADMIN, ROLES.COMPANY_ADMIN, ROLES.EMPLOYEE].includes(normalized)) {
     return normalized;
   }
 

@@ -3,7 +3,7 @@ import { ROUTES } from '../../router/routePaths';
 export const companyAdminNav = [
   { label: 'Dashboard', path: ROUTES.dashboard, activeKey: 'dashboard' },
   { label: 'Organization', path: ROUTES.companyAdminMaster, activeKey: 'company-admin-organization' },
-  { label: 'Employee Management', path: ROUTES.companyAdminEmployeeManagement, activeKey: 'user-setup-overview' },
+  { label: 'Employee Management', path: ROUTES.companyAdminEmployeeManagement, activeKey: 'company-setup-overview' },
   { label: 'Attendance', path: ROUTES.companyAdminAttendance, activeKey: 'company-admin-attendance' },
   { label: 'Holiday List', path: ROUTES.companyAdminHolidayList, activeKey: 'company-admin-holiday-list' },
   { label: 'Leave Management', path: ROUTES.companyAdminLeaveManagement, activeKey: 'company-admin-leave-management' },

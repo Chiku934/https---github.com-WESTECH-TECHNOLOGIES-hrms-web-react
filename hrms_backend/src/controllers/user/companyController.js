@@ -1,6 +1,12 @@
 const prisma = require('../../config/prisma');
 const { auditFromRequest } = require('../../utils/auditLogger');
 
+const DEFAULT_ROLE_DEFINITIONS = [
+  { name: 'Super Admin', description: 'Full access to everything', isSystem: true },
+  { name: 'Company Admin', description: 'Company level administration access', isSystem: true },
+  { name: 'Employee', description: 'Standard employee access', isSystem: true },
+];
+
 /**
  * Get all companies (super admin only)
  */
@@ -185,6 +191,13 @@ const createCompany = async (req, res) => {
       }
     });
 
+    await prisma.role.createMany({
+      data: DEFAULT_ROLE_DEFINITIONS.map((role) => ({
+        companyId: company.id,
+        ...role,
+      })),
+    });
+
     // Audit log
     await auditFromRequest(req, {
       entity: 'company',
@@ -205,7 +218,8 @@ const createCompany = async (req, res) => {
         plan: company.plan,
         status: company.status,
         createdAt: company.createdAt,
-        updatedAt: company.updatedAt
+        updatedAt: company.updatedAt,
+        roleCount: DEFAULT_ROLE_DEFINITIONS.length
       }
     });
   } catch (error) {

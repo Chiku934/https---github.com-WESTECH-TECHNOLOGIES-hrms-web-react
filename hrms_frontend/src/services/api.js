@@ -50,6 +50,15 @@ export const companyAPI = {
   delete: (id) => api.delete(`/companies/${id}`),
 };
 
+// Company users API
+export const companyUserAPI = {
+  getAll: (params = {}) => api.get('/company-users', { params }),
+  getById: (id) => api.get(`/company-users/${id}`),
+  create: (data) => api.post('/company-users', data),
+  update: (id, data) => api.put(`/company-users/${id}`, data),
+  delete: (id) => api.delete(`/company-users/${id}`),
+};
+
 // Users API
 export const userAPI = {
   getAll: () => api.get('/users'),

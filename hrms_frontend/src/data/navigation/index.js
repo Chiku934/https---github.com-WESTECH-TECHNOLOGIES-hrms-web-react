@@ -1,128 +1,29 @@
 import { ROUTES } from '../../router/routePaths';
 import { superAdminNav } from './superAdminNav';
-import { subAdminNav } from './subAdminNav';
 import { companyAdminNav } from './companyAdminNav';
-import { hrNav } from './hrNav';
 import { employeeNav } from './employeeNav';
-import { ROLES } from '../../app/config/roles';
+import { ROLES, normalizeRole } from '../../app/config/roles';
 import { resolveCurrentRole as resolveCurrentRoleFromAuthService } from '../../services/authService';
 
-const managerNav = [
-  { label: 'Dashboard', path: ROUTES.dashboard, activeKey: 'dashboard' },
-  { label: 'My Team', path: ROUTES.myTeamSummary, activeKey: 'myteam_summary' },
-  { label: 'My Team Timesheet', path: ROUTES.myTeamTimesheet, activeKey: 'myteam_timesheet' },
-  { label: 'Project Management', path: ROUTES.projects, activeKey: 'projects' },
-  { label: 'Project Assign / Team Setup', path: ROUTES.companyAdminCreateTeam, activeKey: 'company-admin-create-team' },
-  { label: 'Attendance (Team View)', path: ROUTES.myTeamAttendance, activeKey: 'myteam_attendance' },
-  { label: 'Leave (Team View)', path: ROUTES.myTeamLeave, activeKey: 'myteam_leave_overview' },
-  { label: 'Reports', path: ROUTES.myTeamPerformance, activeKey: 'myteam_performance' },
-];
-
-const managerSidebarSections = [
-  {
-    key: 'dashboard',
-    label: 'Dashboard',
-    icon: 'house',
-    activeKeys: ['dashboard'],
-    items: [{ label: 'Dashboard', path: ROUTES.dashboard, activeKey: 'dashboard' }],
-  },
-  {
-    key: 'my-team',
-    label: 'My Team',
-    icon: 'people-group',
-    activeKeys: [
-      'myteam_summary',
-      'myteam_summary_digital_services',
-      'myteam_summary_direct',
-      'myteam_summary_indirect',
-      'myteam_summary_peers',
-    ],
-    items: [{ label: 'My Team', path: ROUTES.myTeamSummary, activeKey: 'myteam_summary' }],
-  },
-  {
-    key: 'timesheet',
-    label: 'My Team Timesheet',
-    icon: 'clipboard',
-    activeKeys: [
-      'myteam_timesheet',
-      'myteam_timesheet_approvals',
-      'myteam_timesheet_project_time',
-      'myteam_timesheet_week_summary',
-      'myteam_timesheet_exceptions',
-    ],
-    items: [{ label: 'My Team Timesheet', path: ROUTES.myTeamTimesheet, activeKey: 'myteam_timesheet' }],
-  },
-  {
-    key: 'projects',
-    label: 'Project Management',
-    icon: 'briefcase',
-    activeKeys: ['projects', 'company-admin-project-management'],
-    items: [{ label: 'Project Management', path: ROUTES.projects, activeKey: 'projects' }],
-  },
-  {
-    key: 'team-setup',
-    label: 'Project Assign / Team Setup',
-    icon: 'people-group',
-    activeKeys: ['company-admin-create-team', 'company-admin-assign-team'],
-    items: [{ label: 'Project Assign / Team Setup', path: ROUTES.companyAdminCreateTeam, activeKey: 'company-admin-create-team' }],
-  },
-  {
-    key: 'attendance',
-    label: 'Attendance (Team View)',
-    icon: 'clock',
-    activeKeys: [
-      'myteam_attendance',
-      'myteam_attendance_approvals',
-      'myteam_attendance_ot',
-      'myteam_attendance_regularize',
-      'myteam_attendance_shift',
-      'myteam_attendance_efforts',
-      'myteam_attendance_negligence',
-      'myteam_attendance_assignments',
-      'myteam_attendance_reports',
-    ],
-    items: [{ label: 'Attendance (Team View)', path: ROUTES.myTeamAttendance, activeKey: 'myteam_attendance' }],
-  },
-  {
-    key: 'leave',
-    label: 'Leave (Team View)',
-    icon: 'calendar',
-    activeKeys: ['myteam_leave_overview', 'myteam_leave_approvals'],
-    items: [{ label: 'Leave (Team View)', path: ROUTES.myTeamLeave, activeKey: 'myteam_leave_overview' }],
-  },
-  {
-    key: 'reports',
-    label: 'Reports',
-    icon: 'chart-line',
-    activeKeys: [
-      'myteam_performance',
-      'myteam_performance_kpis',
-      'myteam_performance_meetings',
-      'myteam_performance_feedback',
-    ],
-    items: [{ label: 'Reports', path: ROUTES.myTeamPerformance, activeKey: 'myteam_performance' }],
-  },
-];
-
 export const roleNavigation = {
-  superAdmin: superAdminNav,
-  subAdmin: subAdminNav,
-  companyAdmin: companyAdminNav,
-  'hr-manager': hrNav,
-  'hr-executive': hrNav,
-  manager: managerNav,
-  employee: employeeNav,
+  [ROLES.SUPER_ADMIN]: superAdminNav,
+  [ROLES.COMPANY_ADMIN]: companyAdminNav,
+  [ROLES.EMPLOYEE]: employeeNav,
 };
 
 export const topNavItems = employeeNav;
 export const subNavItems = [];
 export const sidebarSections = [
   {
-    key: 'user-setup',
-    label: 'User Setup',
+    key: 'company-setup',
+    label: 'Company Setup',
     icon: 'user',
-    activeKeys: ['user-setup'],
-    items: [{ label: 'My Profile', path: ROUTES.userSetup, activeKey: 'user-setup' }],
+    activeKeys: ['company-setup'],
+    items: [
+      { label: 'Overview', path: ROUTES.companySetup, activeKey: 'company-setup-overview' },
+      { label: 'Companies', path: `${ROUTES.companySetup}#companies`, activeKey: 'company-setup-companies' },
+      { label: 'Company Users', path: `${ROUTES.companySetup}#users`, activeKey: 'company-setup-users' },
+    ],
   },
   {
     key: 'me',
@@ -349,7 +250,7 @@ export const sidebarSections = [
   },
 ];
 
-export const employeeSidebarSections = sidebarSections.filter((section) => section.key !== 'user-setup');
+export const employeeSidebarSections = sidebarSections.filter((section) => section.key !== 'company-setup');
 
 export const roleSidebarSections = {
   [ROLES.SUPER_ADMIN]: [
@@ -361,19 +262,19 @@ export const roleSidebarSections = {
       items: [{ label: 'Dashboard Overview', path: ROUTES.dashboard, activeKey: 'dashboard' }],
     },
     {
-      key: 'user-setup',
-      label: 'User Setup',
+      key: 'company-setup',
+      label: 'Company Setup',
       icon: 'user',
       activeKeys: [
-        'user-setup',
-        'user-setup-overview',
-        'user-setup-users',
-        'user-setup-create',
+        'company-setup',
+        'company-setup-overview',
+        'company-setup-companies',
+        'company-setup-users',
       ],
       items: [
-        { label: 'Overview', path: `${ROUTES.userSetup}#overview`, activeKey: 'user-setup-overview' },
-        { label: 'User List', path: `${ROUTES.userSetup}#users`, activeKey: 'user-setup-users' },
-        { label: 'Create User', path: `${ROUTES.userSetup}#create`, activeKey: 'user-setup-create' },
+        { label: 'Overview', path: ROUTES.companySetup, activeKey: 'company-setup-overview' },
+        { label: 'Companies', path: `${ROUTES.companySetup}#companies`, activeKey: 'company-setup-companies' },
+        { label: 'Company Users', path: `${ROUTES.companySetup}#users`, activeKey: 'company-setup-users' },
       ],
     },
     {
@@ -424,44 +325,6 @@ export const roleSidebarSections = {
       ],
     },
   ],
-  [ROLES.SUB_ADMIN]: [
-    {
-      key: 'dashboard',
-      label: 'Dashboard',
-      icon: 'house',
-      activeKeys: ['dashboard'],
-      items: [{ label: 'Overview', path: ROUTES.dashboard, activeKey: 'dashboard' }],
-    },
-    {
-      key: 'user-setup',
-      label: 'Employee Management',
-      icon: 'user',
-      activeKeys: [
-        'user-setup-overview',
-        'user-setup-users',
-        'user-setup-create',
-      ],
-      items: [
-        { label: 'Overview', path: `${ROUTES.userSetup}#overview`, activeKey: 'user-setup-overview' },
-        { label: 'Employee List', path: `${ROUTES.userSetup}#users`, activeKey: 'user-setup-users' },
-        { label: 'Create Employee', path: `${ROUTES.userSetup}#create`, activeKey: 'user-setup-create' },
-      ],
-    },
-    {
-      key: 'permissions',
-      label: 'Permissions',
-      icon: 'lock',
-      activeKeys: ['sub-admin-permissions'],
-      items: [{ label: 'Role Permissions', path: ROUTES.subAdminPermissions, activeKey: 'sub-admin-permissions' }],
-    },
-    {
-      key: 'reports',
-      label: 'Reports',
-      icon: 'chart-line',
-      activeKeys: ['sub-admin-reports'],
-      items: [{ label: 'Reports', path: ROUTES.subAdminReports, activeKey: 'sub-admin-reports' }],
-    },
-  ],
   [ROLES.COMPANY_ADMIN]: [
     {
       key: 'dashboard',
@@ -471,18 +334,17 @@ export const roleSidebarSections = {
       items: [{ label: 'Overview', path: ROUTES.dashboard, activeKey: 'dashboard' }],
     },
     {
-      key: 'user-setup',
+      key: 'company-setup',
       label: 'Employee Management',
       icon: 'user',
       activeKeys: [
-        'user-setup-overview',
-        'user-setup-users',
-        'user-setup-create',
+        'company-setup-overview',
+        'company-setup-users',
       ],
       items: [
-        { label: 'Overview', path: `${ROUTES.userSetup}#overview`, activeKey: 'user-setup-overview' },
-        { label: 'Employee List', path: `${ROUTES.userSetup}#users`, activeKey: 'user-setup-users' },
-        { label: 'Create Employee', path: `${ROUTES.userSetup}#create`, activeKey: 'user-setup-create' },
+        { label: 'Overview', path: ROUTES.companyAdminEmployeeManagement, activeKey: 'company-setup-overview' },
+        { label: 'Employee List', path: `${ROUTES.companyAdminEmployeeManagement}#users`, activeKey: 'company-setup-users' },
+        { label: 'Create Employee', path: `${ROUTES.companyAdminEmployeeManagement}#create`, activeKey: 'company-setup-users' },
       ],
     },
     {
@@ -595,133 +457,12 @@ export const roleSidebarSections = {
       ],
     },
   ],
-  [ROLES.HR_MANAGER]: [
-    {
-      key: 'dashboard',
-      label: 'Dashboard',
-      icon: 'house',
-      activeKeys: ['dashboard'],
-      items: [{ label: 'Overview', path: ROUTES.dashboard, activeKey: 'dashboard' }],
-    },
-    {
-      key: 'user-setup',
-      label: 'User Setup',
-      icon: 'user',
-      activeKeys: ['user-setup'],
-      items: [{ label: 'User Setup', path: ROUTES.userSetup, activeKey: 'user-setup' }],
-    },
-    {
-      key: 'employees',
-      label: 'Employee Management',
-      icon: 'users',
-      activeKeys: ['hr-employee-management'],
-      items: [{ label: 'Employee List', path: ROUTES.hrEmployeeManagement, activeKey: 'hr-employee-management' }],
-    },
-    {
-      key: 'master',
-      label: 'Master',
-      icon: 'clipboard',
-      activeKeys: ['hr-master'],
-      items: [{ label: 'Department and Designation', path: ROUTES.hrMaster, activeKey: 'hr-master' }],
-    },
-    {
-      key: 'leave',
-      label: 'Leave Management',
-      icon: 'calendar',
-      activeKeys: ['hr-leave-management'],
-      items: [{ label: 'Leave Overview', path: ROUTES.hrLeaveManagement, activeKey: 'hr-leave-management' }],
-    },
-    {
-      key: 'attendance',
-      label: 'Attendance',
-      icon: 'clock',
-      activeKeys: ['hr-attendance'],
-      items: [{ label: 'Attendance', path: ROUTES.hrAttendance, activeKey: 'hr-attendance' }],
-    },
-    {
-      key: 'project',
-      label: 'Project Management',
-      icon: 'briefcase',
-      activeKeys: ['hr-project-management'],
-      items: [{ label: 'Project Management', path: ROUTES.hrProjectManagement, activeKey: 'hr-project-management' }],
-    },
-    {
-      key: 'reports',
-      label: 'Reports',
-      icon: 'chart-line',
-      activeKeys: ['hr-reports'],
-      items: [{ label: 'Reports', path: ROUTES.hrReports, activeKey: 'hr-reports' }],
-    },
-  ],
-  [ROLES.HR_EXECUTIVE]: [
-    {
-      key: 'dashboard',
-      label: 'Dashboard',
-      icon: 'house',
-      activeKeys: ['dashboard'],
-      items: [{ label: 'Overview', path: ROUTES.dashboard, activeKey: 'dashboard' }],
-    },
-    {
-      key: 'user-setup',
-      label: 'User Setup',
-      icon: 'user',
-      activeKeys: ['user-setup'],
-      items: [{ label: 'User Setup', path: ROUTES.userSetup, activeKey: 'user-setup' }],
-    },
-    {
-      key: 'employees',
-      label: 'Employee Management',
-      icon: 'users',
-      activeKeys: ['hr-employee-management'],
-      items: [{ label: 'Employee List', path: ROUTES.hrEmployeeManagement, activeKey: 'hr-employee-management' }],
-    },
-    {
-      key: 'master',
-      label: 'Master',
-      icon: 'clipboard',
-      activeKeys: ['hr-master'],
-      items: [{ label: 'Department and Designation', path: ROUTES.hrMaster, activeKey: 'hr-master' }],
-    },
-    {
-      key: 'leave',
-      label: 'Leave Management',
-      icon: 'calendar',
-      activeKeys: ['hr-leave-management'],
-      items: [{ label: 'Leave Overview', path: ROUTES.hrLeaveManagement, activeKey: 'hr-leave-management' }],
-    },
-    {
-      key: 'attendance',
-      label: 'Attendance',
-      icon: 'clock',
-      activeKeys: ['hr-attendance'],
-      items: [{ label: 'Attendance', path: ROUTES.hrAttendance, activeKey: 'hr-attendance' }],
-    },
-    {
-      key: 'project',
-      label: 'Project Management',
-      icon: 'briefcase',
-      activeKeys: ['hr-project-management'],
-      items: [{ label: 'Project Management', path: ROUTES.hrProjectManagement, activeKey: 'hr-project-management' }],
-    },
-    {
-      key: 'reports',
-      label: 'Reports',
-      icon: 'chart-line',
-      activeKeys: ['hr-reports'],
-      items: [{ label: 'Reports', path: ROUTES.hrReports, activeKey: 'hr-reports' }],
-    },
-  ],
-  [ROLES.MANAGER]: managerSidebarSections,
   [ROLES.EMPLOYEE]: employeeSidebarSections,
 };
 
 export const roleTopNavItems = {
   [ROLES.SUPER_ADMIN]: superAdminNav,
-  [ROLES.SUB_ADMIN]: subAdminNav,
   [ROLES.COMPANY_ADMIN]: companyAdminNav,
-  [ROLES.HR_MANAGER]: hrNav,
-  [ROLES.HR_EXECUTIVE]: hrNav,
-  [ROLES.MANAGER]: managerNav,
   [ROLES.EMPLOYEE]: employeeNav,
 };
 
@@ -736,23 +477,7 @@ export function resolveRoleFromStorage() {
   }
 
   const storedRole = window.localStorage.getItem('hrms_role');
-
-  switch (storedRole) {
-    case ROLES.SUPER_ADMIN:
-    case ROLES.SUB_ADMIN:
-    case ROLES.COMPANY_ADMIN:
-    case ROLES.HR_MANAGER:
-    case ROLES.HR_EXECUTIVE:
-    case ROLES.MANAGER:
-    case ROLES.EMPLOYEE:
-      return storedRole;
-    case 'admin':
-      return ROLES.COMPANY_ADMIN;
-    case 'user':
-      return ROLES.EMPLOYEE;
-    default:
-      return ROLES.EMPLOYEE;
-  }
+  return normalizeRole(storedRole);
 }
 
 /**

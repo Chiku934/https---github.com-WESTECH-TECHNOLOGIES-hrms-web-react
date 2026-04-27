@@ -508,6 +508,7 @@ body.dashboard-page {
   grid-template-columns: 300px minmax(0, 1fr);
   gap: 18px 28px;
   align-items: start;
+  padding: 10px;
 }
 
 .dashboard-left-col,

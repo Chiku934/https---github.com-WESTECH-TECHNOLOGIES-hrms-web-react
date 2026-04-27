@@ -67,24 +67,6 @@ const payrollPermissionMatrix = {
     canFinalizePayroll: false,
     canExportReports: false,
   },
-  [ROLES.MANAGER]: {
-    canViewPayslip: true,
-    canViewTeamSummary: true,
-    canViewAnalytics: false,
-    canRunPayroll: false,
-    canApprovePayroll: false,
-    canFinalizePayroll: false,
-    canExportReports: false,
-  },
-  [ROLES.HR]: {
-    canViewPayslip: true,
-    canViewTeamSummary: true,
-    canViewAnalytics: true,
-    canRunPayroll: true,
-    canApprovePayroll: true,
-    canFinalizePayroll: true,
-    canExportReports: false,
-  },
   [ROLES.COMPANY_ADMIN]: {
     canViewPayslip: true,
     canViewTeamSummary: true,
@@ -95,15 +77,6 @@ const payrollPermissionMatrix = {
     canExportReports: true,
   },
   [ROLES.SUPER_ADMIN]: {
-    canViewPayslip: true,
-    canViewTeamSummary: true,
-    canViewAnalytics: true,
-    canRunPayroll: false,
-    canApprovePayroll: false,
-    canFinalizePayroll: false,
-    canExportReports: true,
-  },
-  [ROLES.SUB_ADMIN]: {
     canViewPayslip: true,
     canViewTeamSummary: true,
     canViewAnalytics: true,
@@ -378,22 +351,16 @@ export default function Payroll() {
   const permissions = useMemo(() => getPayrollPermissions(role), [role]);
   const roleLabel = useMemo(() => {
     switch (role) {
-      case ROLES.HR:
-        return 'HR';
-      case ROLES.MANAGER:
-        return 'Manager';
       case ROLES.COMPANY_ADMIN:
         return 'Company Admin';
       case ROLES.SUPER_ADMIN:
         return 'Super Admin';
-      case ROLES.SUB_ADMIN:
-        return 'Sub Admin';
       default:
         return 'Employee';
     }
   }, [role]);
   const isEmployee = role === ROLES.EMPLOYEE;
-  const isManager = role === ROLES.MANAGER;
+  const isManager = role === ROLES.COMPANY_ADMIN || role === ROLES.SUPER_ADMIN;
   const canManagePayroll = permissions.canRunPayroll || permissions.canApprovePayroll || permissions.canFinalizePayroll;
   const [isLoading, setIsLoading] = useState(true);
   const [payrollRows, setPayrollRows] = useState(() => buildPayrollRows());

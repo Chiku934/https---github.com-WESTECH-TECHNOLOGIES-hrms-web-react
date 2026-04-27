@@ -92,7 +92,7 @@ export default function CompanyAdminDashboard() {
   }, [activeFilter]);
 
   const openRoute = (label) => {
-    if (label === 'User Setup') navigate(ROUTES.userSetup);
+    if (label === 'Company Setup') navigate(ROUTES.companySetup);
     if (label === 'Master' || label === 'Organization') navigate(ROUTES.companyAdminMaster);
     if (label === 'Leave Management') navigate(ROUTES.companyAdminLeaveManagement);
     if (label === 'Attendance') navigate(ROUTES.companyAdminAttendance);

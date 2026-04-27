@@ -6,9 +6,7 @@ import { resolveRoleFromStorage } from '../data/navigation/index.js';
 import { ROLES } from '../app/config/roles.js';
 import { ROUTES } from '../router/routePaths.js';
 import SuperAdminDashboard from '../features/super-admin/pages/Dashboard';
-import SubAdminDashboard from '../features/sub-admin/pages/Dashboard';
 import CompanyAdminDashboard from '../features/company-admin/pages/Dashboard';
-import HrDashboard from '../features/hr/pages/Dashboard';
 
 const employeeMetrics = [
   { label: 'Attendance', value: '96%', change: '+2% this week' },
@@ -574,20 +572,8 @@ export default function Dashboard() {
     return <SuperAdminDashboard />;
   }
 
-  if (role === ROLES.SUB_ADMIN) {
-    return <SubAdminDashboard />;
-  }
-
   if (role === ROLES.COMPANY_ADMIN) {
     return <CompanyAdminDashboard />;
-  }
-
-  if (role === ROLES.HR) {
-    return <HrDashboard />;
-  }
-
-  if (role === ROLES.MANAGER) {
-    return <ManagerDashboard />;
   }
 
   return <EmployeeDashboard />;

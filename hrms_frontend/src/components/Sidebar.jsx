@@ -303,11 +303,7 @@ export default function Sidebar({
 
   const roleDisplayName = {
     [ROLES.SUPER_ADMIN]: 'Super Admin',
-    [ROLES.SUB_ADMIN]: 'Sub Admin',
     [ROLES.COMPANY_ADMIN]: 'Company Admin',
-    [ROLES.HR_MANAGER]: 'HR Manager',
-    [ROLES.HR_EXECUTIVE]: 'HR Executive',
-    [ROLES.MANAGER]: 'Team Manager',
     [ROLES.EMPLOYEE]: 'Employee',
   }[role] || 'User';
 

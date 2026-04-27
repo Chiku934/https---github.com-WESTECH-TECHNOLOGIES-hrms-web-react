@@ -1,0 +1,831 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import DashboardShell from '../../shared/components/DashboardShell';
+import Icon from '../../../components/Icon';
+import { ROLES } from '../../../app/config/roles';
+import { resolveRoleFromStorage } from '../../../data/navigation/index.js';
+import '../../super-admin/styles/packages.css';
+import '../../super-admin/styles/clients.css';
+import {
+  companySetupCompanyStatusOptions,
+  companySetupCountryOptions,
+  companySetupPlanOptions,
+  companySetupRoleOptions,
+  companySetupTimezoneOptions,
+  companySetupUserStatusOptions,
+} from '../data/companySetupData';
+import {
+  createCompany,
+  createCompanyUser,
+  loadCompanySetupCompanies,
+  loadCompanySetupCompanyUsers,
+  loadCompanySetupUsers,
+  updateCompany,
+  updateCompanyUser,
+  deleteCompany,
+  deleteCompanyUser,
+} from '../services/companySetupService';
+
+const superAdminTabs = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'companies', label: 'Companies' },
+  { key: 'users', label: 'Company Users' },
+];
+
+const companyAdminTabs = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'users', label: 'Employee Management' },
+];
+
+const tabToHash = {
+  overview: '#overview',
+  companies: '#companies',
+  users: '#users',
+};
+
+const hashToTab = {
+  '#overview': 'overview',
+  '#companies': 'companies',
+  '#users': 'users',
+  '#create': 'users',
+};
+
+const emptyCompanyForm = {
+  id: null,
+  name: '',
+  slug: '',
+  legalName: '',
+  countryCode: 'IN',
+  timezone: 'Asia/Kolkata',
+  plan: 'pro',
+  status: 'active',
+};
+
+const emptyCompanyUserForm = {
+  id: null,
+  companyId: '',
+  userId: '',
+  employeeCode: '',
+  role: ROLES.EMPLOYEE,
+  status: 'active',
+  joinedAt: '',
+  leftAt: '',
+};
+
+function SmallCard({ title, children, className = '' }) {
+  return (
+    <section className={`dashboard-card superadmin-package-mini-card ${className}`.trim()}>
+      <div className="dashboard-card-title">{title}</div>
+      {children}
+    </section>
+  );
+}
+
+function toneForValue(value) {
+  const normalized = String(value || '').toLowerCase().replace(/\s+/g, '-');
+  return `tone-${normalized}`;
+}
+
+function normalizeSlug(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function capitalize(value) {
+  return String(value || '')
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function getErrorMessage(error, fallback) {
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object') {
+    return error.message || error.error || fallback;
+  }
+  return fallback;
+}
+
+function validateCompanyForm(form, companies) {
+  const errors = {};
+  const name = form.name.trim();
+  const slug = normalizeSlug(form.slug);
+
+  if (!name) errors.name = 'Company name is required.';
+  if (!slug) errors.slug = 'Slug is required.';
+  if (slug && companies.some((company) => company.id !== form.id && company.slug.toLowerCase() === slug.toLowerCase())) {
+    errors.slug = 'Slug must be unique.';
+  }
+  if (!form.legalName.trim()) errors.legalName = 'Legal name is required.';
+  if (!form.countryCode) errors.countryCode = 'Country code is required.';
+  if (!form.timezone) errors.timezone = 'Timezone is required.';
+  if (!form.plan) errors.plan = 'Plan is required.';
+  if (!form.status) errors.status = 'Status is required.';
+
+  return errors;
+}
+
+function validateCompanyUserForm(form, companyUsers) {
+  const errors = {};
+  if (!form.companyId) errors.companyId = 'Select a company.';
+  if (!form.userId) errors.userId = 'Select a user.';
+  if (!form.employeeCode.trim()) errors.employeeCode = 'Employee code is required.';
+  if (!form.role) errors.role = 'Role is required.';
+  if (!form.status) errors.status = 'Status is required.';
+
+  if (form.companyId && form.userId) {
+    const duplicateUser = companyUsers.some(
+      (companyUser) => companyUser.id !== form.id
+        && String(companyUser.companyId) === String(form.companyId)
+        && String(companyUser.userId) === String(form.userId)
+    );
+    if (duplicateUser) {
+      errors.userId = 'That user is already linked to this company.';
+    }
+  }
+
+  if (form.companyId && form.employeeCode.trim()) {
+    const duplicateCode = companyUsers.some(
+      (companyUser) => companyUser.id !== form.id
+        && String(companyUser.companyId) === String(form.companyId)
+        && companyUser.employeeCode.toLowerCase() === form.employeeCode.trim().toLowerCase()
+    );
+    if (duplicateCode) {
+      errors.employeeCode = 'Employee code must be unique for the company.';
+    }
+  }
+
+  return errors;
+}
+
+function TableCell({ title, subtitle }) {
+  return (
+    <div className="superadmin-client-cell">
+      <strong>{title}</strong>
+      <span>{subtitle}</span>
+    </div>
+  );
+}
+
+function StatusChip({ value }) {
+  return <span className={`role-status-chip ${toneForValue(value)}`}>{value}</span>;
+}
+
+export default function CompanySetup() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const role = resolveRoleFromStorage();
+  const isSuperAdmin = role === ROLES.SUPER_ADMIN;
+  const tabs = isSuperAdmin ? superAdminTabs : companyAdminTabs;
+  const defaultTab = tabs[0].key;
+  const [tab, setTab] = useState(defaultTab);
+  const [companies, setCompanies] = useState([]);
+  const [companyUsers, setCompanyUsers] = useState([]);
+  const [userPool, setUserPool] = useState([]);
+  const [companyForm, setCompanyForm] = useState(emptyCompanyForm);
+  const [companyErrors, setCompanyErrors] = useState({});
+  const [companyUserForm, setCompanyUserForm] = useState(emptyCompanyUserForm);
+  const [companyUserErrors, setCompanyUserErrors] = useState({});
+  const [companyFilter, setCompanyFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  useEffect(() => {
+    const nextTab = hashToTab[location.hash] || defaultTab;
+    if (tabs.some((item) => item.key === nextTab) && tab !== nextTab) {
+      setTab(nextTab);
+    }
+  }, [defaultTab, location.hash, tab, tabs]);
+
+  useEffect(() => {
+    if (!location.hash) {
+      navigate(tabToHash[tab] || '#overview', { replace: true });
+    }
+  }, [location.hash, navigate, tab]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      setLoading(true);
+      setLoadError('');
+
+      try {
+        const [nextCompanies, nextCompanyUsers, nextUsers] = await Promise.all([
+          loadCompanySetupCompanies(role),
+          loadCompanySetupCompanyUsers(role),
+          loadCompanySetupUsers(role),
+        ]);
+
+        if (!isMounted) return;
+
+        setCompanies(nextCompanies);
+        setCompanyUsers(nextCompanyUsers);
+        setUserPool(nextUsers);
+        setCompanyFilter('all');
+        setCompanyForm(emptyCompanyForm);
+        setCompanyErrors({});
+        setCompanyUserForm((current) => ({
+          ...emptyCompanyUserForm,
+          companyId: nextCompanies[0]?.id ? String(nextCompanies[0].id) : current.companyId || '',
+        }));
+        setCompanyUserErrors({});
+      } catch (error) {
+        if (isMounted) {
+          setLoadError(getErrorMessage(error, 'Failed to load company setup data.'));
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [role]);
+
+  const enrichedCompanyUsers = useMemo(() => companyUsers.map((item) => {
+    const company = companies.find((record) => record.id === item.companyId) || item.company;
+    const user = userPool.find((record) => record.id === item.userId) || item.user;
+
+    return {
+      ...item,
+      companyName: company?.name || item.companyName || '',
+      fullName: user?.fullName || user?.displayName || item.fullName || '',
+      userName: user?.userName || item.userName || '',
+      email: user?.email || item.email || '',
+      phone: user?.phone || item.phone || '',
+    };
+  }), [companies, companyUsers, userPool]);
+
+  const sidebarActiveKey = tab === 'companies'
+    ? 'company-setup-companies'
+    : tab === 'users'
+      ? 'company-setup-users'
+      : 'company-setup-overview';
+  const visibleCompanies = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return companies;
+    return companies.filter((company) => (
+      `${company.name} ${company.slug} ${company.legalName} ${company.plan} ${company.status}`
+        .toLowerCase()
+        .includes(query)
+    ));
+  }, [companies, searchTerm]);
+
+  const visibleCompanyUsers = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    return enrichedCompanyUsers.filter((item) => {
+      const matchesCompany = companyFilter === 'all' || String(item.companyId) === String(companyFilter);
+      const matchesSearch = !query || `${item.companyName} ${item.fullName} ${item.email} ${item.employeeCode} ${item.roleLabel} ${item.status}`
+        .toLowerCase()
+        .includes(query);
+      return matchesCompany && matchesSearch;
+    });
+  }, [companyFilter, enrichedCompanyUsers, searchTerm]);
+
+  const companyStats = useMemo(() => {
+    const activeCompanies = companies.filter((company) => company.status === 'active').length;
+    const activeAssignments = companyUsers.filter((item) => item.status === 'active').length;
+    return [
+      { label: 'Companies', value: String(companies.length), change: `${activeCompanies} active` },
+      { label: 'Company Users', value: String(companyUsers.length), change: `${activeAssignments} active assignments` },
+      { label: 'Users Pool', value: String(userPool.length), change: 'From users table' },
+      { label: 'Roles', value: String(companySetupRoleOptions.length), change: 'Supported frontend roles' },
+    ];
+  }, [companyUsers.length, companies.length, userPool.length]);
+
+  const companyOptions = useMemo(() => companies.map((company) => ({ value: String(company.id), label: `${company.name} (${company.slug})` })), [companies]);
+  const userOptions = useMemo(() => userPool.map((user) => ({ value: String(user.id), label: `${user.displayName} - ${user.email}` })), [userPool]);
+
+  useEffect(() => {
+    if (!companyUserForm.companyId && companyOptions.length) {
+      setCompanyUserForm((current) => ({ ...current, companyId: companyOptions[0].value }));
+    }
+  }, [companyOptions, companyUserForm.companyId]);
+
+  useEffect(() => {
+    if (!companyFilter || companyFilter === 'all') return;
+    if (!companies.some((company) => String(company.id) === String(companyFilter))) {
+      setCompanyFilter('all');
+    }
+  }, [companyFilter, companies]);
+
+  const resetCompanyForm = () => {
+    setCompanyForm(emptyCompanyForm);
+    setCompanyErrors({});
+  };
+
+  const resetCompanyUserForm = () => {
+    setCompanyUserForm({
+      ...emptyCompanyUserForm,
+      companyId: companyOptions[0]?.value || '',
+    });
+    setCompanyUserErrors({});
+  };
+
+  const submitCompany = async (event) => {
+    event.preventDefault();
+    const nextErrors = validateCompanyForm(companyForm, companies);
+    setCompanyErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
+
+    const payload = {
+      ...companyForm,
+      name: companyForm.name.trim(),
+      slug: normalizeSlug(companyForm.slug),
+      legalName: companyForm.legalName.trim(),
+      countryCode: companyForm.countryCode,
+      timezone: companyForm.timezone,
+      plan: companyForm.plan,
+      status: companyForm.status,
+    };
+
+    try {
+      const savedCompany = companyForm.id
+        ? await updateCompany(companyForm.id, payload)
+        : await createCompany(payload);
+
+      setCompanies((current) => (
+        companyForm.id
+          ? current.map((company) => (company.id === companyForm.id ? savedCompany : company))
+          : [...current, savedCompany]
+      ));
+      resetCompanyForm();
+    } catch (error) {
+      setCompanyErrors((current) => ({
+        ...current,
+        form: getErrorMessage(error, 'Failed to save company.'),
+      }));
+    }
+  };
+
+  const editCompany = (company) => {
+    setCompanyForm({
+      id: company.id,
+      name: company.name,
+      slug: company.slug,
+      legalName: company.legalName,
+      countryCode: company.countryCode || 'IN',
+      timezone: company.timezone || 'Asia/Kolkata',
+      plan: company.plan || 'pro',
+      status: company.status || 'active',
+      createdAt: company.createdAt,
+    });
+    setCompanyErrors({});
+    setTab('companies');
+    navigate(tabToHash.companies, { replace: true });
+  };
+
+  const removeCompany = async (company) => {
+    if (!window.confirm(`Delete ${company.name}? This will also remove related company-user links.`)) return;
+
+    try {
+      await deleteCompany(company.id);
+      setCompanies((current) => current.filter((item) => item.id !== company.id));
+      setCompanyUsers((current) => current.filter((item) => item.companyId !== company.id));
+      if (String(companyFilter) === String(company.id)) {
+        setCompanyFilter('all');
+      }
+      if (String(companyUserForm.companyId) === String(company.id)) {
+        resetCompanyUserForm();
+      }
+    } catch (error) {
+      setCompanyErrors({ form: getErrorMessage(error, 'Failed to delete company.') });
+    }
+  };
+
+  const submitCompanyUser = async (event) => {
+    event.preventDefault();
+    const nextErrors = validateCompanyUserForm(companyUserForm, companyUsers);
+    setCompanyUserErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
+
+    const selectedCompanyRecord = companies.find((item) => String(item.id) === String(companyUserForm.companyId));
+    const selectedUser = userPool.find((item) => String(item.id) === String(companyUserForm.userId));
+
+    const payload = {
+      companyId: Number(companyUserForm.companyId),
+      userId: Number(companyUserForm.userId),
+      employeeCode: companyUserForm.employeeCode.trim(),
+      role: companyUserForm.role,
+      status: companyUserForm.status,
+      joinedAt: companyUserForm.joinedAt || null,
+      leftAt: companyUserForm.leftAt || null,
+    };
+
+    try {
+      const savedCompanyUser = companyUserForm.id
+        ? await updateCompanyUser(companyUserForm.id, payload)
+        : await createCompanyUser(payload);
+
+      const nextCompanyUser = {
+        ...savedCompanyUser,
+        companyName: savedCompanyUser.company?.name || selectedCompanyRecord?.name || '',
+        fullName: selectedUser?.displayName || selectedUser?.fullName || '',
+        userName: selectedUser?.userName || '',
+        email: selectedUser?.email || '',
+      };
+
+      setCompanyUsers((current) => (
+        companyUserForm.id
+          ? current.map((item) => (item.id === companyUserForm.id ? nextCompanyUser : item))
+          : [...current, nextCompanyUser]
+      ));
+      resetCompanyUserForm();
+    } catch (error) {
+      setCompanyUserErrors((current) => ({
+        ...current,
+        form: getErrorMessage(error, 'Failed to save company user.'),
+      }));
+    }
+  };
+
+  const editCompanyUser = (companyUser) => {
+    setCompanyUserForm({
+      id: companyUser.id,
+      companyId: String(companyUser.companyId),
+      userId: String(companyUser.userId),
+      employeeCode: companyUser.employeeCode,
+      role: companyUser.role || ROLES.EMPLOYEE,
+      status: companyUser.status || 'active',
+      joinedAt: companyUser.joinedAt || '',
+      leftAt: companyUser.leftAt || '',
+      createdAt: companyUser.createdAt,
+    });
+    setCompanyUserErrors({});
+    setTab('users');
+    navigate(tabToHash.users, { replace: true });
+  };
+
+  const removeCompanyUser = async (companyUser) => {
+    if (!window.confirm(`Delete ${companyUser.employeeCode} from ${companyUser.companyName || 'this company'}?`)) return;
+
+    try {
+      await deleteCompanyUser(companyUser.id);
+      setCompanyUsers((current) => current.filter((item) => item.id !== companyUser.id));
+    } catch (error) {
+      setCompanyUserErrors({ form: getErrorMessage(error, 'Failed to delete company user.') });
+    }
+  };
+
+  const overview = (
+    <div className="dashboard-layout welcome-layout">
+      <div className="welcome-main">
+        <div className="welcome-banner company-admin-welcome-banner">
+          <div className="welcome-profile">
+            <div className="welcome-banner-badge">CS</div>
+            <div className="welcome-profile-copy">
+              <h1>Company Setup</h1>
+              <p>Register companies and connect company users to the `companies` and `company_users` tables from your schema.</p>
+            </div>
+          </div>
+        </div>
+
+        <SmallCard title="Schema Focus">
+          <div className="superadmin-package-limit-guide">
+            <div className="superadmin-package-limit-item">
+              <div className="superadmin-package-limit-top">
+                <strong>companies</strong>
+                <span>Name, slug, legal name, plan, status</span>
+              </div>
+              <p>Use this section to create or update each company record.</p>
+            </div>
+            <div className="superadmin-package-limit-item">
+              <div className="superadmin-package-limit-top">
+                <strong>company_users</strong>
+                <span>Company, user, employee code, status</span>
+              </div>
+              <p>Link existing users to a company and keep the employee code unique per company.</p>
+            </div>
+          </div>
+        </SmallCard>
+
+        <SmallCard title="Supported Roles">
+          <div className="superadmin-list">
+            {companySetupRoleOptions.map((item) => (
+              <div key={item.value} className="superadmin-list-item">
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+              </div>
+            ))}
+          </div>
+        </SmallCard>
+      </div>
+
+      <div className="dashboard-right-col">
+        <SmallCard title="Setup Metrics">
+          <div className="superadmin-package-detail superadmin-package-detail-compact">
+            {companyStats.map((metric) => (
+              <div key={metric.label}>
+                <span>{metric.label}</span>
+                <strong>{metric.value}</strong>
+                <small className="superadmin-package-detail-note">{metric.change}</small>
+              </div>
+            ))}
+          </div>
+        </SmallCard>
+
+        <SmallCard title="Seed Companies">
+          <div className="superadmin-list">
+            {companies.slice(0, 4).map((company) => (
+              <div key={company.id} className="superadmin-list-item">
+                <span>{company.name}</span>
+                <strong>{company.plan}</strong>
+              </div>
+            ))}
+          </div>
+        </SmallCard>
+      </div>
+    </div>
+  );
+
+  const companiesTab = (
+    <div className="superadmin-package-layout company-admin-list-page">
+      <div className="superadmin-package-workspace">
+        <SmallCard title="Companies">
+          <div className="superadmin-client-toolbar">
+            <div className="superadmin-searchbox">
+              <Icon name="search" size={12} />
+              <input
+                type="text"
+                placeholder="Search company records"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+            </div>
+            <button type="button" className="superadmin-package-secondary" onClick={resetCompanyForm}>
+              New Company
+            </button>
+          </div>
+
+          <div className="superadmin-table-wrap">
+            <table className="superadmin-table">
+              <thead>
+                <tr>
+                  <th>Company</th>
+                  <th>Slug</th>
+                  <th>Plan</th>
+                  <th>Status</th>
+                  <th>Users</th>
+                  <th>Updated</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleCompanies.map((company) => {
+                  const linkedUsers = companyUsers.filter((item) => item.companyId === company.id).length;
+                  return (
+                    <tr key={company.id}>
+                      <td>
+                        <TableCell title={company.name} subtitle={company.legalName} />
+                      </td>
+                      <td>{company.slug}</td>
+                      <td>{capitalize(company.plan)}</td>
+                      <td><StatusChip value={company.status} /></td>
+                      <td>{linkedUsers}</td>
+                      <td>{company.updatedAt ? new Date(company.updatedAt).toLocaleDateString() : '-'}</td>
+                      <td>
+                        <div className="superadmin-grid-actions">
+                          <button type="button" className="superadmin-grid-icon-button edit" onClick={() => editCompany(company)} aria-label="Edit company">
+                            <Icon name="pen-to-square" size={14} />
+                          </button>
+                          <button type="button" className="superadmin-grid-icon-button danger" onClick={() => removeCompany(company)} aria-label="Delete company">
+                            <Icon name="trash" size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </SmallCard>
+
+        <SmallCard title={companyForm.id ? 'Edit Company' : 'Add Company'}>
+          <form className="superadmin-package-form-grid" onSubmit={submitCompany} style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+            <label className="superadmin-package-form-field">
+              <span>Company Name</span>
+              <input value={companyForm.name} onChange={(event) => setCompanyForm((current) => ({ ...current, name: event.target.value }))} />
+              {companyErrors.name ? <small className="superadmin-package-error">{companyErrors.name}</small> : null}
+            </label>
+            <label className="superadmin-package-form-field">
+              <span>Slug</span>
+              <input value={companyForm.slug} onChange={(event) => setCompanyForm((current) => ({ ...current, slug: normalizeSlug(event.target.value) }))} />
+              {companyErrors.slug ? <small className="superadmin-package-error">{companyErrors.slug}</small> : null}
+            </label>
+            <label className="superadmin-package-form-field">
+              <span>Legal Name</span>
+              <input value={companyForm.legalName} onChange={(event) => setCompanyForm((current) => ({ ...current, legalName: event.target.value }))} />
+              {companyErrors.legalName ? <small className="superadmin-package-error">{companyErrors.legalName}</small> : null}
+            </label>
+            <label className="superadmin-package-form-field">
+              <span>Country Code</span>
+              <select value={companyForm.countryCode} onChange={(event) => setCompanyForm((current) => ({ ...current, countryCode: event.target.value }))}>
+                {companySetupCountryOptions.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+              {companyErrors.countryCode ? <small className="superadmin-package-error">{companyErrors.countryCode}</small> : null}
+            </label>
+            <label className="superadmin-package-form-field">
+              <span>Timezone</span>
+              <select value={companyForm.timezone} onChange={(event) => setCompanyForm((current) => ({ ...current, timezone: event.target.value }))}>
+                {companySetupTimezoneOptions.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+              {companyErrors.timezone ? <small className="superadmin-package-error">{companyErrors.timezone}</small> : null}
+            </label>
+            <label className="superadmin-package-form-field">
+              <span>Plan</span>
+              <select value={companyForm.plan} onChange={(event) => setCompanyForm((current) => ({ ...current, plan: event.target.value }))}>
+                {companySetupPlanOptions.map((item) => <option key={item} value={item}>{capitalize(item)}</option>)}
+              </select>
+              {companyErrors.plan ? <small className="superadmin-package-error">{companyErrors.plan}</small> : null}
+            </label>
+            <label className="superadmin-package-form-field">
+              <span>Status</span>
+              <select value={companyForm.status} onChange={(event) => setCompanyForm((current) => ({ ...current, status: event.target.value }))}>
+                {companySetupCompanyStatusOptions.map((item) => <option key={item} value={item}>{capitalize(item)}</option>)}
+              </select>
+              {companyErrors.status ? <small className="superadmin-package-error">{companyErrors.status}</small> : null}
+            </label>
+            <div className="superadmin-package-form-actions">
+              <button type="button" className="superadmin-package-modal-button secondary" onClick={resetCompanyForm}>Reset</button>
+              <button type="submit" className="superadmin-package-modal-button primary">{companyForm.id ? 'Update Company' : 'Save Company'}</button>
+            </div>
+            {companyErrors.form ? <small className="superadmin-package-error" style={{ gridColumn: '1 / -1' }}>{companyErrors.form}</small> : null}
+          </form>
+        </SmallCard>
+      </div>
+    </div>
+  );
+
+  const usersTab = (
+    <div className="superadmin-package-layout company-admin-list-page">
+      <div className="superadmin-package-workspace">
+        <SmallCard title="Company Users">
+          <div className="superadmin-client-toolbar">
+            <div className="superadmin-searchbox">
+              <Icon name="search" size={12} />
+              <input
+                type="text"
+                placeholder="Search users, codes, or roles"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+            </div>
+            <div className="superadmin-searchbox">
+              <select value={companyFilter} onChange={(event) => setCompanyFilter(event.target.value)}>
+                <option value="all">All companies</option>
+                {companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
+              </select>
+            </div>
+            <button type="button" className="superadmin-package-secondary" onClick={resetCompanyUserForm}>
+              New Company User
+            </button>
+          </div>
+
+          <div className="superadmin-table-wrap">
+            <table className="superadmin-table">
+              <thead>
+                <tr>
+                  <th>Company</th>
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Employee Code</th>
+                  <th>Status</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleCompanyUsers.map((companyUser) => (
+                  <tr key={companyUser.id}>
+                    <td>
+                      <TableCell title={companyUser.companyName || 'Company'} subtitle={`#${companyUser.companyId}`} />
+                    </td>
+                    <td>
+                      <TableCell title={companyUser.fullName || 'User'} subtitle={companyUser.email || companyUser.userName} />
+                    </td>
+                    <td><StatusChip value={companyUser.roleLabel || companyUser.role} /></td>
+                    <td>{companyUser.employeeCode}</td>
+                    <td><StatusChip value={companyUser.status} /></td>
+                    <td>{companyUser.joinedAt || '-'}</td>
+                    <td>
+                      <div className="superadmin-grid-actions">
+                        <button type="button" className="superadmin-grid-icon-button edit" onClick={() => editCompanyUser(companyUser)} aria-label="Edit company user">
+                          <Icon name="pen-to-square" size={14} />
+                        </button>
+                        <button type="button" className="superadmin-grid-icon-button danger" onClick={() => removeCompanyUser(companyUser)} aria-label="Delete company user">
+                          <Icon name="trash" size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </SmallCard>
+
+        <SmallCard title={companyUserForm.id ? 'Edit Company User' : 'Add Company User'}>
+          <form className="superadmin-package-form-grid" onSubmit={submitCompanyUser} style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+            <label className="superadmin-package-form-field">
+              <span>Company</span>
+              <select value={companyUserForm.companyId} onChange={(event) => setCompanyUserForm((current) => ({ ...current, companyId: event.target.value }))}>
+                <option value="">Select company</option>
+                {companyOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </select>
+              {companyUserErrors.companyId ? <small className="superadmin-package-error">{companyUserErrors.companyId}</small> : null}
+            </label>
+            <label className="superadmin-package-form-field">
+              <span>User</span>
+              <select value={companyUserForm.userId} onChange={(event) => setCompanyUserForm((current) => ({ ...current, userId: event.target.value }))}>
+                <option value="">Select user</option>
+                {userOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </select>
+              {companyUserErrors.userId ? <small className="superadmin-package-error">{companyUserErrors.userId}</small> : null}
+            </label>
+            <label className="superadmin-package-form-field">
+              <span>Employee Code</span>
+              <input value={companyUserForm.employeeCode} onChange={(event) => setCompanyUserForm((current) => ({ ...current, employeeCode: event.target.value.toUpperCase() }))} placeholder="SUR001" />
+              {companyUserErrors.employeeCode ? <small className="superadmin-package-error">{companyUserErrors.employeeCode}</small> : null}
+            </label>
+            <label className="superadmin-package-form-field">
+              <span>Role</span>
+              <select value={companyUserForm.role} onChange={(event) => setCompanyUserForm((current) => ({ ...current, role: event.target.value }))}>
+                {companySetupRoleOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </select>
+              {companyUserErrors.role ? <small className="superadmin-package-error">{companyUserErrors.role}</small> : null}
+            </label>
+            <label className="superadmin-package-form-field">
+              <span>Status</span>
+              <select value={companyUserForm.status} onChange={(event) => setCompanyUserForm((current) => ({ ...current, status: event.target.value }))}>
+                {companySetupUserStatusOptions.map((item) => <option key={item} value={item}>{capitalize(item)}</option>)}
+              </select>
+              {companyUserErrors.status ? <small className="superadmin-package-error">{companyUserErrors.status}</small> : null}
+            </label>
+            <label className="superadmin-package-form-field">
+              <span>Joined At</span>
+              <input type="date" value={companyUserForm.joinedAt} onChange={(event) => setCompanyUserForm((current) => ({ ...current, joinedAt: event.target.value }))} />
+            </label>
+            <label className="superadmin-package-form-field">
+              <span>Left At</span>
+              <input type="date" value={companyUserForm.leftAt} onChange={(event) => setCompanyUserForm((current) => ({ ...current, leftAt: event.target.value }))} />
+            </label>
+            <div className="superadmin-package-form-actions">
+              <button type="button" className="superadmin-package-modal-button secondary" onClick={resetCompanyUserForm}>Reset</button>
+              <button type="submit" className="superadmin-package-modal-button primary">{companyUserForm.id ? 'Update Company User' : 'Save Company User'}</button>
+            </div>
+            {companyUserErrors.form ? <small className="superadmin-package-error" style={{ gridColumn: '1 / -1' }}>{companyUserErrors.form}</small> : null}
+          </form>
+        </SmallCard>
+      </div>
+    </div>
+  );
+
+  return (
+    <DashboardShell
+      activeKey={sidebarActiveKey}
+      headerProps={{ companyText: role === ROLES.SUPER_ADMIN ? 'Super Admin' : 'Company Admin' }}
+      >
+      {loadError ? (
+        <div className="superadmin-package-error" style={{ marginBottom: 16 }}>
+          {loadError}
+        </div>
+      ) : null}
+      {loading ? (
+        <div className="superadmin-package-detail-note" style={{ marginBottom: 16 }}>
+          Loading company setup from the database...
+        </div>
+      ) : null}
+
+      <div className="superadmin-package-tabs">
+        {tabs.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            className={`superadmin-package-tab ${tab === item.key ? 'active' : ''}`}
+            onClick={() => {
+              setTab(item.key);
+              navigate(tabToHash[item.key] || '#overview', { replace: true });
+            }}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'overview' ? overview : null}
+      {tab === 'companies' && isSuperAdmin ? companiesTab : null}
+      {tab === 'users' ? usersTab : null}
+    </DashboardShell>
+  );
+}

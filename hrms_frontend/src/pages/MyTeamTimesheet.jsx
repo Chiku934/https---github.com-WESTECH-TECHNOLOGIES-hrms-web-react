@@ -248,7 +248,7 @@ export default function MyTeamTimesheet() {
   const { pathname, hash } = useLocation();
   const navigate = useNavigate();
   const currentRole = resolveRoleFromStorage();
-  const roleMode = currentRole === ROLES.HR ? 'hr' : currentRole === ROLES.MANAGER || currentRole === ROLES.COMPANY_ADMIN ? 'manager' : 'viewer';
+  const roleMode = currentRole === ROLES.COMPANY_ADMIN || currentRole === ROLES.SUPER_ADMIN ? 'manager' : 'viewer';
   const [weekIndex, setWeekIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [teamFilter, setTeamFilter] = useState(myTeamTimesheetFilters.teams[0]);

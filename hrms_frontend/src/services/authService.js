@@ -1,5 +1,5 @@
 import { authAPI } from './api';
-import { ROLES } from '../app/config/roles';
+import { ROLES, normalizeRole } from '../app/config/roles';
 
 /**
  * Maps backend role codes to frontend role constants
@@ -7,25 +7,7 @@ import { ROLES } from '../app/config/roles';
  * @returns {string} Frontend role constant
  */
 function mapBackendRoleToFrontend(backendRole) {
-  if (!backendRole) return ROLES.EMPLOYEE;
-  
-  const roleMap = {
-    // Direct mapping (backend uses same codes as frontend)
-    'super-admin': ROLES.SUPER_ADMIN,
-    'sub-admin': ROLES.SUB_ADMIN,
-    'company-admin': ROLES.COMPANY_ADMIN,
-    'hr-manager': ROLES.HR_MANAGER,
-    'hr-executive': ROLES.HR_EXECUTIVE,
-    'manager': ROLES.MANAGER,
-    'employee': ROLES.EMPLOYEE,
-    
-    // Legacy mappings
-    'admin': ROLES.COMPANY_ADMIN,
-    'user': ROLES.EMPLOYEE,
-    'hr': ROLES.HR_MANAGER,
-  };
-  
-  return roleMap[backendRole] || ROLES.EMPLOYEE;
+  return normalizeRole(backendRole);
 }
 
 /**
@@ -67,7 +49,7 @@ export async function resolveCurrentRole() {
     
     // Fallback to localStorage role
     if (storedRole) {
-      return mapBackendRoleToFrontend(storedRole);
+      return normalizeRole(storedRole);
     }
     
     // Ultimate fallback

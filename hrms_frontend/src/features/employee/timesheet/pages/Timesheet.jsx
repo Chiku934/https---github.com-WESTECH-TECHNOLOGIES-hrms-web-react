@@ -993,7 +993,7 @@ export default function EmployeeTimesheet() {
   const location = useLocation();
   const navigate = useNavigate();
   const currentRole = resolveRoleFromStorage();
-  const roleMode = currentRole === ROLES.HR ? 'hr' : currentRole === ROLES.MANAGER ? 'manager' : 'employee';
+  const roleMode = currentRole === ROLES.COMPANY_ADMIN || currentRole === ROLES.SUPER_ADMIN ? 'manager' : 'employee';
   const [weekIndex, setWeekIndex] = useState(0);
   const [tableSearch, setTableSearch] = useState('');
   const [employeeFilter, setEmployeeFilter] = useState(timesheetFilters.employees[0]);

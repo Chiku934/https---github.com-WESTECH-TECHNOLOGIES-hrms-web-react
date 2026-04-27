@@ -3,6 +3,40 @@ const { comparePassword } = require('../../utils/passwordUtils');
 const { normalizeRole, normalizeRoles, getPrimaryRole } = require('../../utils/roleUtils');
 const prisma = require('../../config/prisma');
 
+function normalizeDepartment(department) {
+  if (!department) return null;
+  return {
+    id: department.id.toString(),
+    name: department.name,
+    code: department.code,
+  };
+}
+
+function normalizeDesignation(designation) {
+  if (!designation) return null;
+  return {
+    id: designation.id.toString(),
+    title: designation.title,
+    level: designation.level,
+  };
+}
+
+function normalizeAssignment(assignment) {
+  if (!assignment) return null;
+  return {
+    id: String(assignment.id),
+    department: normalizeDepartment(assignment.department),
+    designation: normalizeDesignation(assignment.designation),
+    manager: assignment.manager ? {
+      id: String(assignment.manager.id),
+      employeeProfile: assignment.manager.companyUser?.employeeProfile ? {
+        firstName: assignment.manager.companyUser.employeeProfile.firstName,
+        lastName: assignment.manager.companyUser.employeeProfile.lastName
+      } : null
+    } : null,
+  };
+}
+
 /**
  * Login user against database
  */
@@ -292,26 +326,7 @@ const getMe = async (req, res) => {
       normalizedRoles,
       primaryRole: primaryRoleCode,
       permissions: [...new Set(permissions)],
-      currentAssignment: currentAssignment ? {
-        id: String(currentAssignment.id),
-        department: currentAssignment.department ? {
-          id: String(currentAssignment.department.id),
-          name: currentAssignment.department.name,
-          code: currentAssignment.department.code
-        } : null,
-        designation: currentAssignment.designation ? {
-          id: String(currentAssignment.designation.id),
-          name: currentAssignment.designation.name,
-          code: currentAssignment.designation.code
-        } : null,
-        manager: currentAssignment.manager ? {
-          id: String(currentAssignment.manager.id),
-          employeeProfile: currentAssignment.manager.companyUser.employeeProfile ? {
-            firstName: currentAssignment.manager.companyUser.employeeProfile.firstName,
-            lastName: currentAssignment.manager.companyUser.employeeProfile.lastName
-          } : null
-        } : null
-      } : null
+      currentAssignment: normalizeAssignment(currentAssignment)
     };
 
     res.status(200).json({
