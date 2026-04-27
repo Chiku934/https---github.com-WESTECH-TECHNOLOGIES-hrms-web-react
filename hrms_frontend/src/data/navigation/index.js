@@ -3,7 +3,9 @@ import { superAdminNav } from './superAdminNav';
 import { companyAdminNav } from './companyAdminNav';
 import { employeeNav } from './employeeNav';
 import { ROLES, normalizeRole } from '../../app/config/roles';
-import { resolveCurrentRole as resolveCurrentRoleFromAuthService } from '../../services/authService';
+import authService from '../../services/authService';
+
+const resolveCurrentRoleFromAuthService = authService.resolveCurrentRole;
 
 export const roleNavigation = {
   [ROLES.SUPER_ADMIN]: superAdminNav,

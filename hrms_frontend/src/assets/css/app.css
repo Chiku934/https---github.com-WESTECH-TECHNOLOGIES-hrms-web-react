@@ -15,8 +15,11 @@
 @import url('./utility-pages.css');
 @import url('./sidebar.css');
 @import url('./dashboard.css');
-@import url('./attendance.css');
 @import url('./timesheet.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 body.myteam-page,
 body.myteam-attendance-page,

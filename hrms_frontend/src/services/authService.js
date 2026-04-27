@@ -1,120 +1,175 @@
-import { authAPI } from './api';
-import { ROLES, normalizeRole } from '../app/config/roles';
+import axiosClient from './axiosClient';
 
 /**
- * Maps backend role codes to frontend role constants
- * @param {string} backendRole - Role code from backend (e.g., 'super-admin', 'hr-manager')
- * @returns {string} Frontend role constant
+ * Authentication Service
+ * Handles all authentication-related API calls
  */
-function mapBackendRoleToFrontend(backendRole) {
-  return normalizeRole(backendRole);
-}
-
-/**
- * Resolves the current user's role from backend API
- * Falls back to localStorage if API call fails
- * @returns {Promise<string>} Resolved role constant
- */
-export async function resolveCurrentRole() {
-  // First, try to get role from localStorage as quick fallback
-  const storedRole = localStorage.getItem('hrms_role');
-  const storedToken = localStorage.getItem('hrms_token');
-  
-  // If no token, we can't call API
-  if (!storedToken) {
-    return storedRole ? mapBackendRoleToFrontend(storedRole) : ROLES.EMPLOYEE;
-  }
-  
-  try {
-    // Try to get fresh user data from backend
-    const response = await authAPI.getMe();
-    const userData = response.data;
-    
-    // Backend returns primaryRole field
-    const backendRole = userData.primaryRole || userData.role;
-    
-    if (backendRole) {
-      const frontendRole = mapBackendRoleToFrontend(backendRole);
+const authService = {
+  /**
+   * Login user with email, password, and optional company slug
+   * @param {string} email - User email
+   * @param {string} password - User password
+   * @param {string} company_slug - Optional company slug for multi-company users
+   * @returns {Promise} API response
+   */
+  login: async (email, password, company_slug = null) => {
+    try {
+      const response = await axiosClient.post('/auth/login', {
+        email,
+        password,
+        company_slug,
+      });
       
-      // Update localStorage with fresh role (optional, for fallback)
-      localStorage.setItem('hrms_role', frontendRole);
+      const { access_token, refresh_token, user, company } = response.data.data;
       
-      return frontendRole;
+      // Store tokens and user info
+      localStorage.setItem('accessToken', access_token);
+      localStorage.setItem('refreshToken', refresh_token);
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('company', JSON.stringify(company));
+      localStorage.setItem('companyId', company?.id);
+      
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
     }
-    
-    // If backend doesn't return role, fall back to stored role
-    throw new Error('No role returned from backend');
-  } catch (error) {
-    console.warn('Failed to resolve role from backend, falling back to localStorage:', error);
-    
-    // Fallback to localStorage role
-    if (storedRole) {
-      return normalizeRole(storedRole);
+  },
+
+  /**
+   * Register a new tenant company with admin user
+   * @param {Object} companyData - Company information
+   * @param {Object} adminData - Admin user information
+   * @returns {Promise} API response
+   */
+  registerTenant: async (companyData, adminData) => {
+    try {
+      const response = await axiosClient.post('/companies/register', {
+        company: companyData,
+        admin: adminData,
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
     }
-    
-    // Ultimate fallback
-    return ROLES.EMPLOYEE;
-  }
-}
+  },
 
-/**
- * Gets current user data from backend
- * Falls back to localStorage if API call fails
- * @returns {Promise<object>} User data object
- */
-export async function getCurrentUser() {
-  const storedToken = localStorage.getItem('hrms_token');
-  
-  if (!storedToken) {
-    // Try to get from localStorage fallback
-    const storedUser = localStorage.getItem('hrms_user');
-    return storedUser ? JSON.parse(storedUser) : null;
-  }
-  
-  try {
-    const response = await authAPI.getMe();
-    const userData = response.data;
-    
-    // Store in localStorage for fallback
-    localStorage.setItem('hrms_user', JSON.stringify(userData));
-    
-    return userData;
-  } catch (error) {
-    console.warn('Failed to get user from backend, falling back to localStorage:', error);
-    
-    const storedUser = localStorage.getItem('hrms_user');
-    return storedUser ? JSON.parse(storedUser) : null;
-  }
-}
+  /**
+   * Get current authenticated user info
+   * @returns {Promise} User information with company and permissions
+   */
+  getCurrentUser: async () => {
+    try {
+      const response = await axiosClient.get('/auth/me');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
 
-/**
- * Checks if user is authenticated (has valid token)
- * @returns {boolean} True if authenticated
- */
-export function isAuthenticated() {
-  const token = localStorage.getItem('hrms_token');
-  return !!token;
-}
+  /**
+   * Refresh access token using refresh token
+   * @param {string} refreshToken - Refresh token
+   * @returns {Promise} New tokens
+   */
+  refreshToken: async (refreshToken) => {
+    try {
+      const response = await axiosClient.post('/auth/refresh', {
+        refresh_token: refreshToken,
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
 
-/**
- * Clears all auth data from localStorage
- */
-export function clearAuthData() {
-  localStorage.removeItem('hrms_token');
-  localStorage.removeItem('hrms_role');
-  localStorage.removeItem('hrms_user');
-}
+  /**
+   * Change user password
+   * @param {string} currentPassword - Current password
+   * @param {string} newPassword - New password
+   * @returns {Promise} API response
+   */
+  changePassword: async (currentPassword, newPassword) => {
+    try {
+      const response = await axiosClient.post('/users/change-password', {
+        currentPassword,
+        newPassword,
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
 
-/**
- * Gets navigation items for the current role
- * This function can be used to dynamically get navigation based on backend role
- * @returns {Promise<Array>} Navigation items for the current role
- */
-export async function getNavigationForCurrentRole() {
-  const role = await resolveCurrentRole();
-  
-  // Import navigation data dynamically to avoid circular dependencies
-  const { roleNavigation } = await import('../data/navigation/index.js');
-  
-  return roleNavigation[role] || [];
-}
+  /**
+   * Logout user (client-side only)
+   */
+  logout: () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem('company');
+    localStorage.removeItem('companyId');
+  },
+
+  /**
+   * Check if user is authenticated
+   * @returns {boolean} True if user has access token
+   */
+  isAuthenticated: () => {
+    return !!localStorage.getItem('accessToken');
+  },
+
+  /**
+   * Get stored user data
+   * @returns {Object|null} User object or null
+   */
+  getUser: () => {
+    const userStr = localStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
+  },
+
+  /**
+   * Get stored company data
+   * @returns {Object|null} Company object or null
+   */
+  getCompany: () => {
+    const companyStr = localStorage.getItem('company');
+    return companyStr ? JSON.parse(companyStr) : null;
+  },
+
+  /**
+   * Get access token
+   * @returns {string|null} Access token or null
+   */
+  getAccessToken: () => {
+    return localStorage.getItem('accessToken');
+  },
+
+  /**
+   * Resolve current user's role from backend API
+   * This is used by the navigation system to get fresh role data
+   * @returns {Promise<string>} Promise resolving to the user's role constant
+   */
+  resolveCurrentRole: async () => {
+    try {
+      const userData = await authService.getCurrentUser();
+      const user = userData.data?.user || userData.data;
+      
+      // Determine role based on user data
+      if (user.is_super_admin) {
+        return 'SUPER_ADMIN';
+      } else if (user.is_company_admin) {
+        return 'COMPANY_ADMIN';
+      } else {
+        return 'EMPLOYEE';
+      }
+    } catch (error) {
+      console.warn('Failed to resolve role from backend:', error);
+      // Fallback to localStorage
+      const storedRole = localStorage.getItem('hrms_role');
+      return storedRole || 'EMPLOYEE';
+    }
+  },
+};
+
+export default authService;
