@@ -1,11 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { AgGridReact } from 'ag-grid-react';
+import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import DashboardShell from '../../shared/components/DashboardShell';
 import Icon from '../../../components/Icon';
 import { ROLES } from '../../../app/config/roles';
 import { resolveRoleFromStorage } from '../../../data/navigation/index.js';
 import '../../super-admin/styles/packages.css';
 import '../../super-admin/styles/clients.css';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
 import {
   companySetupCompanyStatusOptions,
   companySetupCountryOptions,
@@ -25,6 +29,8 @@ import {
   deleteCompany,
   deleteCompanyUser,
 } from '../services/companySetupService';
+
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 const superAdminTabs = [
   { key: 'overview', label: 'Overview' },
@@ -174,6 +180,124 @@ function StatusChip({ value }) {
   return <span className={`role-status-chip ${toneForValue(value)}`}>{value}</span>;
 }
 
+function CompanyGridEmptyOverlay() {
+  return (
+    <div className="superadmin-grid-empty">
+      <strong>No companies found</strong>
+      <span>Try a different search term or adjust the filters.</span>
+    </div>
+  );
+}
+
+function CompanyUserGridEmptyOverlay() {
+  return (
+    <div className="superadmin-grid-empty">
+      <strong>No company users found</strong>
+      <span>Try a different search term or adjust the filters.</span>
+    </div>
+  );
+}
+
+function CompanyGridHeader(props) {
+  const {
+    displayName,
+    showFilter,
+    enableFilterButton,
+    headerIcon = 'list',
+    column,
+    showMenu = true,
+    progressSort,
+  } = props;
+  const isFiltered = Boolean(column?.isFilterActive?.());
+  const sortDirection = column?.getSort?.();
+  const showFilterButton = enableFilterButton && showMenu;
+
+  return (
+    <div className="superadmin-grid-header">
+      <button
+        type="button"
+        className="superadmin-grid-header-sort"
+        onClick={() => progressSort?.(false)}
+        aria-label={`Sort ${displayName}`}
+      >
+        <Icon name={headerIcon} size={11} />
+        <span className="superadmin-grid-header-title">{displayName}</span>
+        <span className={`superadmin-grid-sort-icons ${sortDirection ? 'is-sorted' : ''}`}>
+          <Icon name="arrow-up" size={9} className={sortDirection === 'asc' ? 'is-active' : ''} />
+          <Icon name="arrow-down" size={9} className={sortDirection === 'desc' ? 'is-active' : ''} />
+        </span>
+      </button>
+      {showFilterButton ? (
+        <button
+          type="button"
+          className={`superadmin-grid-header-filter ${isFiltered ? 'active' : ''}`}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            showFilter?.(event.currentTarget);
+          }}
+          aria-label={`Filter ${displayName}`}
+        >
+          <Icon name="filter" size={10} />
+        </button>
+      ) : null}
+      {isFiltered ? <span className="superadmin-grid-header-badge" /> : null}
+    </div>
+  );
+}
+
+function CompanyCell({ data }) {
+  if (!data) return null;
+  return (
+    <div className="superadmin-client-cell">
+      <strong>{data.name}</strong>
+      <span>{data.legalName}</span>
+    </div>
+  );
+}
+
+function CompanyStatusCell({ value }) {
+  return <span className={`role-status-chip ${toneForValue(value)}`}>{value}</span>;
+}
+
+function CompanyActionsCell({ data, onEdit, onDelete }) {
+  if (!data) return null;
+  return (
+    <div className="superadmin-grid-actions">
+      <button type="button" className="superadmin-grid-icon-button edit" onClick={() => onEdit(data)} aria-label="Edit company">
+        <Icon name="pen-to-square" size={14} />
+      </button>
+      <button type="button" className="superadmin-grid-icon-button danger" onClick={() => onDelete(data)} aria-label="Delete company">
+        <Icon name="trash" size={14} />
+      </button>
+    </div>
+  );
+}
+
+function CompanyUserCell({ data }) {
+  if (!data) return null;
+  return (
+    <div className="superadmin-client-cell">
+      <strong>{data.fullName || 'User'}</strong>
+      <span>{data.email || data.userName}</span>
+    </div>
+  );
+}
+
+function CompanyUserActionsCell({ data, onEdit, onDelete }) {
+  if (!data) return null;
+  return (
+    <div className="superadmin-grid-actions">
+      <button type="button" className="superadmin-grid-icon-button edit" onClick={() => onEdit(data)} aria-label="Edit company user">
+        <Icon name="pen-to-square" size={14} />
+      </button>
+      <button type="button" className="superadmin-grid-icon-button danger" onClick={() => onDelete(data)} aria-label="Delete company user">
+        <Icon name="trash" size={14} />
+      </button>
+    </div>
+  );
+}
+
 export default function CompanySetup() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -281,6 +405,11 @@ export default function CompanySetup() {
     ));
   }, [companies, searchTerm]);
 
+  const companiesWithLinkedUsers = useMemo(() => visibleCompanies.map(company => ({
+    ...company,
+    linkedUsers: companyUsers.filter(item => item.companyId === company.id).length,
+  })), [visibleCompanies, companyUsers]);
+
   const visibleCompanyUsers = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     return enrichedCompanyUsers.filter((item) => {
@@ -291,6 +420,7 @@ export default function CompanySetup() {
       return matchesCompany && matchesSearch;
     });
   }, [companyFilter, enrichedCompanyUsers, searchTerm]);
+
 
   const companyStats = useMemo(() => {
     const activeCompanies = companies.filter((company) => company.status === 'active').length;
@@ -477,6 +607,170 @@ export default function CompanySetup() {
     }
   };
 
+  const defaultColDef = useMemo(() => ({
+    sortable: true,
+    resizable: true,
+    filter: true,
+    floatingFilter: false,
+    suppressMovable: true,
+  }), []);
+
+  const companyGridColumnDefs = useMemo(() => [
+    {
+      headerName: 'Company',
+      field: 'name',
+      minWidth: 220,
+      flex: 1.2,
+      filter: 'agTextColumnFilter',
+      cellRenderer: CompanyCell,
+      headerComponent: CompanyGridHeader,
+      headerComponentParams: { headerIcon: 'building', enableFilterButton: true },
+    },
+    {
+      headerName: 'Slug',
+      field: 'slug',
+      width: 140,
+      filter: 'agTextColumnFilter',
+      cellClass: 'superadmin-grid-code',
+      headerComponent: CompanyGridHeader,
+      headerComponentParams: { headerIcon: 'hashtag', enableFilterButton: true },
+    },
+    {
+      headerName: 'Plan',
+      field: 'plan',
+      width: 120,
+      filter: 'agTextColumnFilter',
+      valueFormatter: ({ value }) => capitalize(value),
+      headerComponent: CompanyGridHeader,
+      headerComponentParams: { headerIcon: 'crown', enableFilterButton: true },
+    },
+    {
+      headerName: 'Status',
+      field: 'status',
+      width: 140,
+      filter: 'agTextColumnFilter',
+      cellRenderer: CompanyStatusCell,
+      headerComponent: CompanyGridHeader,
+      headerComponentParams: { headerIcon: 'circle-check', enableFilterButton: true },
+    },
+    {
+      headerName: 'Users',
+      field: 'linkedUsers',
+      width: 100,
+      filter: 'agNumberColumnFilter',
+      cellClass: 'superadmin-grid-number',
+      headerComponent: CompanyGridHeader,
+      headerComponentParams: { headerIcon: 'users', enableFilterButton: true },
+    },
+    {
+      headerName: 'Updated',
+      field: 'updatedAt',
+      width: 140,
+      filter: 'agDateColumnFilter',
+      valueFormatter: ({ value }) => value ? new Date(value).toLocaleDateString() : '-',
+      headerComponent: CompanyGridHeader,
+      headerComponentParams: { headerIcon: 'calendar', enableFilterButton: true },
+    },
+    {
+      headerName: 'Actions',
+      colId: 'actions',
+      width: 150,
+      pinned: 'right',
+      sortable: false,
+      filter: false,
+      resizable: false,
+      suppressHeaderMenuButton: true,
+      headerComponent: CompanyGridHeader,
+      headerComponentParams: { headerIcon: 'ellipsis-vertical', showMenu: false, enableFilterButton: true },
+      cellRenderer: CompanyActionsCell,
+      cellRendererParams: {
+        onEdit: editCompany,
+        onDelete: removeCompany,
+      },
+    },
+  ], [editCompany, removeCompany]);
+
+  const companyUserGridColumnDefs = useMemo(() => [
+    {
+      headerName: 'Company',
+      field: 'companyName',
+      minWidth: 200,
+      flex: 1,
+      filter: 'agTextColumnFilter',
+      cellRenderer: ({ data }) => (
+        <div className="superadmin-client-cell">
+          <strong>{data.companyName || 'Company'}</strong>
+          <span>#{data.companyId}</span>
+        </div>
+      ),
+      headerComponent: CompanyGridHeader,
+      headerComponentParams: { headerIcon: 'building', enableFilterButton: true },
+    },
+    {
+      headerName: 'User',
+      field: 'fullName',
+      minWidth: 220,
+      flex: 1.2,
+      filter: 'agTextColumnFilter',
+      cellRenderer: CompanyUserCell,
+      headerComponent: CompanyGridHeader,
+      headerComponentParams: { headerIcon: 'user', enableFilterButton: true },
+    },
+    {
+      headerName: 'Role',
+      field: 'role',
+      width: 140,
+      filter: 'agTextColumnFilter',
+      cellRenderer: ({ value }) => <StatusChip value={value} />,
+      headerComponent: CompanyGridHeader,
+      headerComponentParams: { headerIcon: 'shield', enableFilterButton: true },
+    },
+    {
+      headerName: 'Employee Code',
+      field: 'employeeCode',
+      width: 160,
+      filter: 'agTextColumnFilter',
+      cellClass: 'superadmin-grid-code',
+      headerComponent: CompanyGridHeader,
+      headerComponentParams: { headerIcon: 'id-card', enableFilterButton: true },
+    },
+    {
+      headerName: 'Status',
+      field: 'status',
+      width: 140,
+      filter: 'agTextColumnFilter',
+      cellRenderer: CompanyStatusCell,
+      headerComponent: CompanyGridHeader,
+      headerComponentParams: { headerIcon: 'circle-check', enableFilterButton: true },
+    },
+    {
+      headerName: 'Joined',
+      field: 'joinedAt',
+      width: 140,
+      filter: 'agDateColumnFilter',
+      valueFormatter: ({ value }) => value || '-',
+      headerComponent: CompanyGridHeader,
+      headerComponentParams: { headerIcon: 'calendar', enableFilterButton: true },
+    },
+    {
+      headerName: 'Actions',
+      colId: 'actions',
+      width: 150,
+      pinned: 'right',
+      sortable: false,
+      filter: false,
+      resizable: false,
+      suppressHeaderMenuButton: true,
+      headerComponent: CompanyGridHeader,
+      headerComponentParams: { headerIcon: 'ellipsis-vertical', showMenu: false, enableFilterButton: true },
+      cellRenderer: CompanyUserActionsCell,
+      cellRendererParams: {
+        onEdit: editCompanyUser,
+        onDelete: removeCompanyUser,
+      },
+    },
+  ], [editCompanyUser, removeCompanyUser]);
+
   const overview = (
     <div className="dashboard-layout welcome-layout">
       <div className="welcome-main">
@@ -567,47 +861,22 @@ export default function CompanySetup() {
             </button>
           </div>
 
-          <div className="superadmin-table-wrap">
-            <table className="superadmin-table">
-              <thead>
-                <tr>
-                  <th>Company</th>
-                  <th>Slug</th>
-                  <th>Plan</th>
-                  <th>Status</th>
-                  <th>Users</th>
-                  <th>Updated</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleCompanies.map((company) => {
-                  const linkedUsers = companyUsers.filter((item) => item.companyId === company.id).length;
-                  return (
-                    <tr key={company.id}>
-                      <td>
-                        <TableCell title={company.name} subtitle={company.legalName} />
-                      </td>
-                      <td>{company.slug}</td>
-                      <td>{capitalize(company.plan)}</td>
-                      <td><StatusChip value={company.status} /></td>
-                      <td>{linkedUsers}</td>
-                      <td>{company.updatedAt ? new Date(company.updatedAt).toLocaleDateString() : '-'}</td>
-                      <td>
-                        <div className="superadmin-grid-actions">
-                          <button type="button" className="superadmin-grid-icon-button edit" onClick={() => editCompany(company)} aria-label="Edit company">
-                            <Icon name="pen-to-square" size={14} />
-                          </button>
-                          <button type="button" className="superadmin-grid-icon-button danger" onClick={() => removeCompany(company)} aria-label="Delete company">
-                            <Icon name="trash" size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="superadmin-master-grid superadmin-package-grid">
+            <AgGridReact
+              rowData={companiesWithLinkedUsers}
+              columnDefs={companyGridColumnDefs}
+              defaultColDef={defaultColDef}
+              domLayout="autoHeight"
+              animateRows
+              getRowId={(params) => params.data.id}
+              suppressCellFocus
+              pagination
+              paginationPageSize={6}
+              paginationPageSizeSelector={[6, 10, 15]}
+              headerHeight={52}
+              rowHeight={56}
+              noRowsOverlayComponent={CompanyGridEmptyOverlay}
+            />
           </div>
         </SmallCard>
 
@@ -692,46 +961,22 @@ export default function CompanySetup() {
             </button>
           </div>
 
-          <div className="superadmin-table-wrap">
-            <table className="superadmin-table">
-              <thead>
-                <tr>
-                  <th>Company</th>
-                  <th>User</th>
-                  <th>Role</th>
-                  <th>Employee Code</th>
-                  <th>Status</th>
-                  <th>Joined</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleCompanyUsers.map((companyUser) => (
-                  <tr key={companyUser.id}>
-                    <td>
-                      <TableCell title={companyUser.companyName || 'Company'} subtitle={`#${companyUser.companyId}`} />
-                    </td>
-                    <td>
-                      <TableCell title={companyUser.fullName || 'User'} subtitle={companyUser.email || companyUser.userName} />
-                    </td>
-                    <td><StatusChip value={companyUser.roleLabel || companyUser.role} /></td>
-                    <td>{companyUser.employeeCode}</td>
-                    <td><StatusChip value={companyUser.status} /></td>
-                    <td>{companyUser.joinedAt || '-'}</td>
-                    <td>
-                      <div className="superadmin-grid-actions">
-                        <button type="button" className="superadmin-grid-icon-button edit" onClick={() => editCompanyUser(companyUser)} aria-label="Edit company user">
-                          <Icon name="pen-to-square" size={14} />
-                        </button>
-                        <button type="button" className="superadmin-grid-icon-button danger" onClick={() => removeCompanyUser(companyUser)} aria-label="Delete company user">
-                          <Icon name="trash" size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="superadmin-master-grid superadmin-package-grid">
+            <AgGridReact
+              rowData={visibleCompanyUsers}
+              columnDefs={companyUserGridColumnDefs}
+              defaultColDef={defaultColDef}
+              domLayout="autoHeight"
+              animateRows
+              getRowId={(params) => params.data.id}
+              suppressCellFocus
+              pagination
+              paginationPageSize={6}
+              paginationPageSizeSelector={[6, 10, 15]}
+              headerHeight={52}
+              rowHeight={56}
+              noRowsOverlayComponent={CompanyUserGridEmptyOverlay}
+            />
           </div>
         </SmallCard>
 
