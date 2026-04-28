@@ -66,7 +66,7 @@ const superAdminSections = [
     items: [
       createItem('Overview', ROUTES.companySetup, 'company-setup-overview'),
       createItem('Companies', `${ROUTES.companySetup}#companies`, 'company-setup-companies'),
-      createItem('Company Users', `${ROUTES.companySetup}#users`, 'company-setup-users'),
+      createItem('Create Company', '/super-admin/company-setup/create', 'company-setup-create'),
     ],
   }),
   createSection({

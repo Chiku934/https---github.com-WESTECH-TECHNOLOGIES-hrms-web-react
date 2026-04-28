@@ -35,7 +35,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 const superAdminTabs = [
   { key: 'overview', label: 'Overview' },
   { key: 'companies', label: 'Companies' },
-  { key: 'users', label: 'Company Users' },
+  { key: 'create', label: 'Create Company' },
 ];
 
 const companyAdminTabs = [
@@ -46,14 +46,13 @@ const companyAdminTabs = [
 const tabToHash = {
   overview: '#overview',
   companies: '#companies',
-  users: '#users',
+  create: '#create',
 };
 
 const hashToTab = {
   '#overview': 'overview',
   '#companies': 'companies',
-  '#users': 'users',
-  '#create': 'users',
+  '#create': 'create',
 };
 
 const emptyCompanyForm = {
@@ -392,8 +391,8 @@ export default function CompanySetup() {
 
   const sidebarActiveKey = tab === 'companies'
     ? 'company-setup-companies'
-    : tab === 'users'
-      ? 'company-setup-users'
+    : tab === 'create'
+      ? 'company-setup-create'
       : 'company-setup-overview';
   const visibleCompanies = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -768,12 +767,12 @@ export default function CompanySetup() {
             <div className="welcome-banner-badge">CS</div>
             <div className="welcome-profile-copy">
               <h1>Company Setup</h1>
-              <p>Register companies and connect company users to the `companies` and `company_users` tables from your schema.</p>
+              <p>Use the same clean card structure as the package pages to register companies and keep the workflow easy to scan.</p>
             </div>
           </div>
         </div>
 
-        <SmallCard title="Schema Focus">
+        <SmallCard title="Schema Focus" className="superadmin-package-form-card">
           <div className="superadmin-package-limit-guide">
             <div className="superadmin-package-limit-item">
               <div className="superadmin-package-limit-top">
@@ -787,12 +786,12 @@ export default function CompanySetup() {
                 <strong>company_users</strong>
                 <span>Company, user, employee code, status</span>
               </div>
-              <p>Link existing users to a company and keep the employee code unique per company.</p>
+              <p>Keep this area reserved for related user-linking workflows.</p>
             </div>
           </div>
         </SmallCard>
 
-        <SmallCard title="Supported Roles">
+        <SmallCard title="Supported Roles" className="superadmin-package-form-card">
           <div className="superadmin-list">
             {companySetupRoleOptions.map((item) => (
               <div key={item.value} className="superadmin-list-item">
@@ -805,7 +804,7 @@ export default function CompanySetup() {
       </div>
 
       <div className="dashboard-right-col">
-        <SmallCard title="Setup Metrics">
+        <SmallCard title="Setup Metrics" className="superadmin-package-form-card">
           <div className="superadmin-package-detail superadmin-package-detail-compact">
             {companyStats.map((metric) => (
               <div key={metric.label}>
@@ -817,7 +816,7 @@ export default function CompanySetup() {
           </div>
         </SmallCard>
 
-        <SmallCard title="Seed Companies">
+        <SmallCard title="Seed Companies" className="superadmin-package-form-card">
           <div className="superadmin-list">
             {companies.slice(0, 4).map((company) => (
               <div key={company.id} className="superadmin-list-item">
@@ -832,9 +831,20 @@ export default function CompanySetup() {
   );
 
   const companiesTab = (
-    <div className="superadmin-package-layout company-admin-list-page">
+    <div className="dashboard-layout superadmin-package-layout company-admin-list-page">
       <div className="superadmin-package-workspace">
-        <SmallCard title="Companies">
+        <div className="superadmin-package-table-card superadmin-master-grid-card">
+          <div className="superadmin-section-header company-list-table-header">
+            <div className="dashboard-section-heading">Company Directory</div>
+            <button
+              type="button"
+              className="superadmin-package-primary superadmin-action-small"
+              onClick={() => navigate('/super-admin/company-setup/create')}
+            >
+              New Company
+            </button>
+          </div>
+
           <div className="superadmin-client-toolbar">
             <div className="superadmin-searchbox">
               <Icon name="search" size={12} />
@@ -845,13 +855,6 @@ export default function CompanySetup() {
                 onChange={(event) => setSearchTerm(event.target.value)}
               />
             </div>
-            <button
-              type="button"
-              className="superadmin-package-secondary"
-              onClick={() => navigate('/super-admin/company-setup/create')}
-            >
-              New Company
-            </button>
           </div>
 
           <div className="superadmin-master-grid superadmin-package-grid">
@@ -871,107 +874,7 @@ export default function CompanySetup() {
               noRowsOverlayComponent={CompanyGridEmptyOverlay}
             />
           </div>
-        </SmallCard>
-      </div>
-    </div>
-  );
-
-  const usersTab = (
-    <div className="superadmin-package-layout company-admin-list-page">
-      <div className="superadmin-package-workspace">
-        <SmallCard title="Company Users">
-          <div className="superadmin-client-toolbar">
-            <div className="superadmin-searchbox">
-              <Icon name="search" size={12} />
-              <input
-                type="text"
-                placeholder="Search users, codes, or roles"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-              />
-            </div>
-            <div className="superadmin-searchbox">
-              <select value={companyFilter} onChange={(event) => setCompanyFilter(event.target.value)}>
-                <option value="all">All companies</option>
-                {companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
-              </select>
-            </div>
-            <button type="button" className="superadmin-package-secondary" onClick={resetCompanyUserForm}>
-              New Company User
-            </button>
-          </div>
-
-          <div className="superadmin-master-grid superadmin-package-grid">
-            <AgGridReact
-              rowData={visibleCompanyUsers}
-              columnDefs={companyUserGridColumnDefs}
-              defaultColDef={defaultColDef}
-              domLayout="autoHeight"
-              animateRows
-              getRowId={(params) => params.data.id}
-              suppressCellFocus
-              pagination
-              paginationPageSize={6}
-              paginationPageSizeSelector={[6, 10, 15]}
-              headerHeight={52}
-              rowHeight={56}
-              noRowsOverlayComponent={CompanyUserGridEmptyOverlay}
-            />
-          </div>
-        </SmallCard>
-
-        <SmallCard title={companyUserForm.id ? 'Edit Company User' : 'Add Company User'}>
-          <form className="superadmin-package-form-grid" onSubmit={submitCompanyUser} style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
-            <label className="superadmin-package-form-field">
-              <span>Company</span>
-              <select value={companyUserForm.companyId} onChange={(event) => setCompanyUserForm((current) => ({ ...current, companyId: event.target.value }))}>
-                <option value="">Select company</option>
-                {companyOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-              </select>
-              {companyUserErrors.companyId ? <small className="superadmin-package-error">{companyUserErrors.companyId}</small> : null}
-            </label>
-            <label className="superadmin-package-form-field">
-              <span>User</span>
-              <select value={companyUserForm.userId} onChange={(event) => setCompanyUserForm((current) => ({ ...current, userId: event.target.value }))}>
-                <option value="">Select user</option>
-                {userOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-              </select>
-              {companyUserErrors.userId ? <small className="superadmin-package-error">{companyUserErrors.userId}</small> : null}
-            </label>
-            <label className="superadmin-package-form-field">
-              <span>Employee Code</span>
-              <input value={companyUserForm.employeeCode} onChange={(event) => setCompanyUserForm((current) => ({ ...current, employeeCode: event.target.value.toUpperCase() }))} placeholder="SUR001" />
-              {companyUserErrors.employeeCode ? <small className="superadmin-package-error">{companyUserErrors.employeeCode}</small> : null}
-            </label>
-            <label className="superadmin-package-form-field">
-              <span>Role</span>
-              <select value={companyUserForm.role} onChange={(event) => setCompanyUserForm((current) => ({ ...current, role: event.target.value }))}>
-                {companySetupRoleOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-              </select>
-              {companyUserErrors.role ? <small className="superadmin-package-error">{companyUserErrors.role}</small> : null}
-            </label>
-            <label className="superadmin-package-form-field">
-              <span>Status</span>
-              <select value={companyUserForm.status} onChange={(event) => setCompanyUserForm((current) => ({ ...current, status: event.target.value }))}>
-                {companySetupUserStatusOptions.map((item) => <option key={item} value={item}>{capitalize(item)}</option>)}
-              </select>
-              {companyUserErrors.status ? <small className="superadmin-package-error">{companyUserErrors.status}</small> : null}
-            </label>
-            <label className="superadmin-package-form-field">
-              <span>Joined At</span>
-              <input type="date" value={companyUserForm.joinedAt} onChange={(event) => setCompanyUserForm((current) => ({ ...current, joinedAt: event.target.value }))} />
-            </label>
-            <label className="superadmin-package-form-field">
-              <span>Left At</span>
-              <input type="date" value={companyUserForm.leftAt} onChange={(event) => setCompanyUserForm((current) => ({ ...current, leftAt: event.target.value }))} />
-            </label>
-            <div className="superadmin-package-form-actions">
-              <button type="button" className="superadmin-package-modal-button secondary" onClick={resetCompanyUserForm}>Reset</button>
-              <button type="submit" className="superadmin-package-modal-button primary">{companyUserForm.id ? 'Update Company User' : 'Save Company User'}</button>
-            </div>
-            {companyUserErrors.form ? <small className="superadmin-package-error" style={{ gridColumn: '1 / -1' }}>{companyUserErrors.form}</small> : null}
-          </form>
-        </SmallCard>
+        </div>
       </div>
     </div>
   );
@@ -994,23 +897,33 @@ export default function CompanySetup() {
 
       <div className="superadmin-package-tabs">
         {tabs.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            className={`superadmin-package-tab ${tab === item.key ? 'active' : ''}`}
-            onClick={() => {
-              setTab(item.key);
-              navigate(tabToHash[item.key] || '#overview', { replace: true });
-            }}
-          >
-            {item.label}
-          </button>
+          item.key === 'create' ? (
+            <button
+              key={item.key}
+              type="button"
+              className={`superadmin-package-tab ${tab === item.key ? 'active' : ''}`}
+              onClick={() => navigate('/super-admin/company-setup/create')}
+            >
+              {item.label}
+            </button>
+          ) : (
+            <button
+              key={item.key}
+              type="button"
+              className={`superadmin-package-tab ${tab === item.key ? 'active' : ''}`}
+              onClick={() => {
+                setTab(item.key);
+                navigate(tabToHash[item.key] || '#overview', { replace: true });
+              }}
+            >
+              {item.label}
+            </button>
+          )
         ))}
       </div>
 
       {tab === 'overview' ? overview : null}
       {tab === 'companies' && isSuperAdmin ? companiesTab : null}
-      {tab === 'users' ? usersTab : null}
     </DashboardShell>
   );
 }

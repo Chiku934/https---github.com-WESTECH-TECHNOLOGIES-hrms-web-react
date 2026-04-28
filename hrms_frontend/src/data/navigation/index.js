@@ -24,7 +24,7 @@ export const sidebarSections = [
     items: [
       { label: 'Overview', path: ROUTES.companySetup, activeKey: 'company-setup-overview' },
       { label: 'Companies', path: `${ROUTES.companySetup}#companies`, activeKey: 'company-setup-companies' },
-      { label: 'Company Users', path: `${ROUTES.companySetup}#users`, activeKey: 'company-setup-users' },
+      { label: 'Create Company', path: '/super-admin/company-setup/create', activeKey: 'company-setup-create' },
     ],
   },
   {
@@ -271,12 +271,12 @@ export const roleSidebarSections = {
         'company-setup',
         'company-setup-overview',
         'company-setup-companies',
-        'company-setup-users',
+        'company-setup-create',
       ],
       items: [
         { label: 'Overview', path: ROUTES.companySetup, activeKey: 'company-setup-overview' },
         { label: 'Companies', path: `${ROUTES.companySetup}#companies`, activeKey: 'company-setup-companies' },
-        { label: 'Company Users', path: `${ROUTES.companySetup}#users`, activeKey: 'company-setup-users' },
+        { label: 'Create Company', path: '/super-admin/company-setup/create', activeKey: 'company-setup-create' },
       ],
     },
     {
