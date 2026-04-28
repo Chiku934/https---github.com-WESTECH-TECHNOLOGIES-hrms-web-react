@@ -40,6 +40,7 @@ import CompanyAdminTimesheet from '../../features/company-admin/pages/Timesheet'
 import CompanyAdminReports from '../../features/company-admin/pages/Reports';
 import CompanyAdminTeamSetup from '../../features/company-admin/pages/TeamSetup';
 import CompanySetup from '../../features/company-setup/pages/CompanySetup';
+import CompanyCreate from '../../features/company-setup/pages/CompanyCreate';
 import { ROUTES } from '../../router/routePaths';
 import { resolveRoleFromStorage } from '../../data/navigation/index.js';
 
@@ -64,6 +65,7 @@ const blockedRoles = [];
 
 const routeAccess = new Map([
   [ROUTES.companySetup, adminRoles],
+  ['/super-admin/company-setup/create', adminRoles],
   [ROUTES.userSetup, adminRoles],
   [ROUTES.superAdminPackages, superAdminOnlyRoles],
   [ROUTES.superAdminMaster, superAdminOnlyRoles],
@@ -175,6 +177,7 @@ const rawRouteConfig = [
   { path: ROUTES.superAdminLocationMaster, element: <SuperAdminMasterSettings /> },
   { path: ROUTES.superAdminReports, element: <SuperAdminReports /> },
   { path: ROUTES.companySetup, element: <CompanySetup /> },
+  { path: '/super-admin/company-setup/create', element: <CompanyCreate /> },
   { path: ROUTES.userSetup, element: <UserProfile /> },
   { path: ROUTES.companyAdminMaster, element: <CompanyAdminMaster /> },
   { path: ROUTES.companyAdminAttendance, element: <CompanyAdminAttendance /> },

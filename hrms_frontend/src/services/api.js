@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -11,10 +11,16 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('hrms_token');
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('hrms_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    const companyId = localStorage.getItem('companyId');
+    if (companyId) {
+      config.headers['X-Company-Id'] = companyId;
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -26,9 +32,16 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Clear token and redirect to login
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('companyId');
+      localStorage.removeItem('user');
+      localStorage.removeItem('company');
       localStorage.removeItem('hrms_token');
       localStorage.removeItem('hrms_role');
-      window.location.href = '/login';
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error.response?.data || error.message);
   }

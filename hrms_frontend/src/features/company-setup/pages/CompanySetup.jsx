@@ -499,20 +499,9 @@ export default function CompanySetup() {
   };
 
   const editCompany = (company) => {
-    setCompanyForm({
-      id: company.id,
-      name: company.name,
-      slug: company.slug,
-      legalName: company.legalName,
-      countryCode: company.countryCode || 'IN',
-      timezone: company.timezone || 'Asia/Kolkata',
-      plan: company.plan || 'pro',
-      status: company.status || 'active',
-      createdAt: company.createdAt,
+    navigate('/super-admin/company-setup/create', {
+      state: { company }
     });
-    setCompanyErrors({});
-    setTab('companies');
-    navigate(tabToHash.companies, { replace: true });
   };
 
   const removeCompany = async (company) => {
@@ -856,7 +845,11 @@ export default function CompanySetup() {
                 onChange={(event) => setSearchTerm(event.target.value)}
               />
             </div>
-            <button type="button" className="superadmin-package-secondary" onClick={resetCompanyForm}>
+            <button
+              type="button"
+              className="superadmin-package-secondary"
+              onClick={() => navigate('/super-admin/company-setup/create')}
+            >
               New Company
             </button>
           </div>
@@ -878,59 +871,6 @@ export default function CompanySetup() {
               noRowsOverlayComponent={CompanyGridEmptyOverlay}
             />
           </div>
-        </SmallCard>
-
-        <SmallCard title={companyForm.id ? 'Edit Company' : 'Add Company'}>
-          <form className="superadmin-package-form-grid" onSubmit={submitCompany} style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
-            <label className="superadmin-package-form-field">
-              <span>Company Name</span>
-              <input value={companyForm.name} onChange={(event) => setCompanyForm((current) => ({ ...current, name: event.target.value }))} />
-              {companyErrors.name ? <small className="superadmin-package-error">{companyErrors.name}</small> : null}
-            </label>
-            <label className="superadmin-package-form-field">
-              <span>Slug</span>
-              <input value={companyForm.slug} onChange={(event) => setCompanyForm((current) => ({ ...current, slug: normalizeSlug(event.target.value) }))} />
-              {companyErrors.slug ? <small className="superadmin-package-error">{companyErrors.slug}</small> : null}
-            </label>
-            <label className="superadmin-package-form-field">
-              <span>Legal Name</span>
-              <input value={companyForm.legalName} onChange={(event) => setCompanyForm((current) => ({ ...current, legalName: event.target.value }))} />
-              {companyErrors.legalName ? <small className="superadmin-package-error">{companyErrors.legalName}</small> : null}
-            </label>
-            <label className="superadmin-package-form-field">
-              <span>Country Code</span>
-              <select value={companyForm.countryCode} onChange={(event) => setCompanyForm((current) => ({ ...current, countryCode: event.target.value }))}>
-                {companySetupCountryOptions.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-              {companyErrors.countryCode ? <small className="superadmin-package-error">{companyErrors.countryCode}</small> : null}
-            </label>
-            <label className="superadmin-package-form-field">
-              <span>Timezone</span>
-              <select value={companyForm.timezone} onChange={(event) => setCompanyForm((current) => ({ ...current, timezone: event.target.value }))}>
-                {companySetupTimezoneOptions.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-              {companyErrors.timezone ? <small className="superadmin-package-error">{companyErrors.timezone}</small> : null}
-            </label>
-            <label className="superadmin-package-form-field">
-              <span>Plan</span>
-              <select value={companyForm.plan} onChange={(event) => setCompanyForm((current) => ({ ...current, plan: event.target.value }))}>
-                {companySetupPlanOptions.map((item) => <option key={item} value={item}>{capitalize(item)}</option>)}
-              </select>
-              {companyErrors.plan ? <small className="superadmin-package-error">{companyErrors.plan}</small> : null}
-            </label>
-            <label className="superadmin-package-form-field">
-              <span>Status</span>
-              <select value={companyForm.status} onChange={(event) => setCompanyForm((current) => ({ ...current, status: event.target.value }))}>
-                {companySetupCompanyStatusOptions.map((item) => <option key={item} value={item}>{capitalize(item)}</option>)}
-              </select>
-              {companyErrors.status ? <small className="superadmin-package-error">{companyErrors.status}</small> : null}
-            </label>
-            <div className="superadmin-package-form-actions">
-              <button type="button" className="superadmin-package-modal-button secondary" onClick={resetCompanyForm}>Reset</button>
-              <button type="submit" className="superadmin-package-modal-button primary">{companyForm.id ? 'Update Company' : 'Save Company'}</button>
-            </div>
-            {companyErrors.form ? <small className="superadmin-package-error" style={{ gridColumn: '1 / -1' }}>{companyErrors.form}</small> : null}
-          </form>
         </SmallCard>
       </div>
     </div>

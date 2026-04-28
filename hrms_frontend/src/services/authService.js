@@ -25,10 +25,22 @@ const authService = {
       
       // Store tokens and user info
       localStorage.setItem('accessToken', access_token);
+      localStorage.setItem('hrms_token', access_token);
       localStorage.setItem('refreshToken', refresh_token);
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('company', JSON.stringify(company));
       localStorage.setItem('companyId', company?.id);
+      
+      // Extract and store role if available in user object
+      if (user && user.role) {
+        localStorage.setItem('hrms_role', user.role);
+      } else if (user && user.roles && Array.isArray(user.roles) && user.roles.length > 0) {
+        // Use the first role if roles array is present
+        localStorage.setItem('hrms_role', user.roles[0]);
+      } else if (response.data.data.roles && Array.isArray(response.data.data.roles) && response.data.data.roles.length > 0) {
+        // Check for roles in the response data
+        localStorage.setItem('hrms_role', response.data.data.roles[0]);
+      }
       
       return response.data;
     } catch (error) {
@@ -110,6 +122,7 @@ const authService = {
     localStorage.removeItem('user');
     localStorage.removeItem('company');
     localStorage.removeItem('companyId');
+    localStorage.removeItem('hrms_token');
   },
 
   /**
@@ -143,7 +156,7 @@ const authService = {
    * @returns {string|null} Access token or null
    */
   getAccessToken: () => {
-    return localStorage.getItem('accessToken');
+    return localStorage.getItem('accessToken') || localStorage.getItem('hrms_token');
   },
 
   /**
