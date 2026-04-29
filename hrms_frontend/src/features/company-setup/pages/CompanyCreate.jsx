@@ -10,7 +10,12 @@ import {
   companySetupPlanOptions,
   companySetupTimezoneOptions,
 } from '../data/companySetupData';
-import { createCompany, updateCompany, loadCompanySetupCompanies } from '../services/companySetupService';
+import {
+  createCompany,
+  updateCompany,
+  loadCompanySetupCompanies,
+  loadCompanySetupCompanyById,
+} from '../services/companySetupService';
 import '../../../features/super-admin/styles/packages.css';
 import '../../../features/super-admin/styles/clients.css';
 
@@ -170,6 +175,92 @@ function normalizeCompanyForm(company = null) {
   };
 }
 
+function mergeDefined(current, next) {
+  const source = next && typeof next === 'object' ? next : {};
+  const result = { ...current };
+
+  Object.entries(source).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      result[key] = value;
+    }
+  });
+
+  return result;
+}
+
+function normalizeRoleValueFromName(name) {
+  const normalized = String(name || '').trim().toLowerCase();
+  if (normalized === 'super admin' || normalized === 'super_admin' || normalized === 'superadmin') return ROLES.SUPER_ADMIN;
+  if (normalized === 'company admin' || normalized === 'company_admin' || normalized === 'companyadmin') return ROLES.COMPANY_ADMIN;
+  if (normalized === 'employee') return ROLES.EMPLOYEE;
+  return ROLES.COMPANY_ADMIN;
+}
+
+function mapPermissionCodesToWizardKeys(codes = []) {
+  const set = new Set();
+  const normalized = new Set((codes || []).map((code) => String(code || '').trim()));
+
+  ['employee-management', 'attendance', 'leave', 'timesheet', 'projects', 'payroll', 'reports', 'performance', 'expenses', 'helpdesk']
+    .forEach((key) => {
+      if (normalized.has(key)) {
+        set.add(key);
+      }
+    });
+
+  if ([...normalized].some((code) => code.startsWith('employee.') || code.startsWith('department.'))) {
+    set.add('employee-management');
+  }
+  if ([...normalized].some((code) => code.startsWith('leave.'))) {
+    set.add('leave');
+  }
+  if ([...normalized].some((code) => code.startsWith('payroll.'))) {
+    set.add('payroll');
+  }
+  if ([...normalized].some((code) => code.startsWith('document.'))) {
+    set.add('helpdesk');
+  }
+
+  return Array.from(set);
+}
+
+function normalizeWizardDataFromCompanyDetail(detail = null) {
+  const admin = detail?.admin || {};
+  const profile = admin.profile || {};
+  const user = admin.user || {};
+  const currentRole = admin.roles?.[0] || {};
+
+  const fullName = [
+    profile.first_name || admin.first_name || '',
+    profile.middle_name || admin.middle_name || '',
+    profile.last_name || admin.last_name || '',
+  ].filter(Boolean).join(' ').trim();
+
+  return {
+    adminName: fullName,
+    adminEmail: user.email || profile.personal_email || '',
+    adminPhone: user.phone || profile.personal_phone || '',
+    adminPassword: '',
+    addressLine1: profile.address_line1 || '',
+    addressLine2: profile.address_line2 || '',
+    city: profile.city || '',
+    state: profile.state || '',
+    postalCode: profile.postal_code || '',
+    addressCountryCode: profile.country || '',
+    phone: profile.extra_data?.company_phone || '',
+    website: profile.extra_data?.website || '',
+    registrationNumber: profile.extra_data?.registration_number || '',
+    taxId: profile.extra_data?.tax_id || '',
+    panNumber: profile.extra_data?.pan_number || '',
+    incorporationDate: profile.extra_data?.incorporation_date || '',
+    logoUrl: profile.extra_data?.logo_url || '',
+    documentNotes: profile.extra_data?.document_notes || '',
+    adminRole: normalizeRoleValueFromName(currentRole.name),
+    adminMode: profile.extra_data?.mode || 'invite',
+    adminNotes: profile.extra_data?.notes || '',
+    permissions: mapPermissionCodesToWizardKeys(currentRole.permissions || profile.extra_data?.permissions || []),
+  };
+}
+
 function buildDraftKey(companyId) {
   return `${storagePrefix}:${companyId ? String(companyId) : 'new'}`;
 }
@@ -287,21 +378,47 @@ export default function CompanyCreate() {
     if (!draft) return;
 
     if (draft.companyForm) {
-      setCompanyForm((current) => ({ ...current, ...draft.companyForm }));
+      setCompanyForm((current) => mergeDefined(current, draft.companyForm));
     }
 
     if (draft.wizardData) {
-      setWizardData((current) => ({ ...current, ...draft.wizardData }));
+      setWizardData((current) => mergeDefined(current, draft.wizardData));
     }
 
     if (draft.stepProgress) {
-      setStepProgress((current) => ({ ...current, ...draft.stepProgress }));
+      setStepProgress((current) => mergeDefined(current, draft.stepProgress));
     }
 
     if (draft.activeStep && wizardSteps.some((item) => item.key === draft.activeStep)) {
       setActiveStep(draft.activeStep);
     }
   }, [wizardKey]);
+
+  useEffect(() => {
+    if (!isEdit || !companyForm.id) return;
+
+    let isMounted = true;
+
+    const loadCompanyDetail = async () => {
+      try {
+        const detail = await loadCompanySetupCompanyById(companyForm.id);
+        if (!isMounted || !detail) return;
+
+        setCompanyForm((current) => mergeDefined(current, detail.company));
+        setWizardData((current) => mergeDefined(current, normalizeWizardDataFromCompanyDetail(detail)));
+      } catch (error) {
+        if (isMounted) {
+          setLoadError(getErrorMessage(error, 'Failed to load company details.'));
+        }
+      }
+    };
+
+    loadCompanyDetail();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [companyForm.id, isEdit]);
 
   useEffect(() => {
     if (location.hash && hashToTab[location.hash] && activeStep !== hashToTab[location.hash]) {
@@ -482,7 +599,7 @@ export default function CompanyCreate() {
   const handleAdminSubmit = (event) => {
     event.preventDefault();
 
-    if (!wizardData.adminPassword.trim()) {
+    if (!isEdit && !wizardData.adminPassword.trim()) {
       setCompanyErrors((current) => ({
         ...current,
         form: 'Admin password is required.',
@@ -542,42 +659,71 @@ export default function CompanyCreate() {
         password: wizardData.adminPassword.trim(),
         phone: wizardData.adminPhone.trim(),
         role: wizardData.adminRole,
+        permissions: wizardData.permissions,
         mode: wizardData.adminMode,
         notes: wizardData.adminNotes.trim(),
       },
     };
 
+    const finishSave = (savedCompany) => {
+      if (savedCompany?.id) {
+        const normalizedCompany = normalizeCompanyForm(savedCompany);
+        setCompanyForm((current) => ({ ...current, ...normalizedCompany }));
+        writeDraft(savedCompany.id, buildWizardPayload({
+          companyForm: normalizedCompany,
+          wizardData,
+          stepProgress: nextProgress,
+          activeStep: 'details',
+        }));
+        removeDraft('new');
+      } else {
+        writeDraft(wizardKey || 'new', buildWizardPayload({
+          companyForm,
+          wizardData,
+          stepProgress: nextProgress,
+          activeStep: 'details',
+        }));
+      }
+
+      setStatusMessage('Company setup saved successfully.');
+      navigate('/super-admin/company-setup#companies', { replace: true });
+    };
+
+    const handleFailure = (error) => {
+      setCompanyErrors((current) => ({
+        ...current,
+        form: getErrorMessage(error, 'Failed to complete company setup.'),
+      }));
+    };
+
+    if (isEdit && companyForm.id) {
+      updateCompany(companyForm.id, {
+        ...payload.company,
+        admin: {
+          name: wizardData.adminName.trim(),
+          email: wizardData.adminEmail.trim(),
+          password: wizardData.adminPassword.trim(),
+          phone: wizardData.adminPhone.trim(),
+          role: wizardData.adminRole,
+          permissions: wizardData.permissions,
+          mode: wizardData.adminMode,
+          notes: wizardData.adminNotes.trim(),
+        },
+      })
+        .then(finishSave)
+        .catch(handleFailure)
+        .finally(() => {
+          setSubmitting(false);
+        });
+      return;
+    }
+
     authService.registerTenant(payload.company, payload.admin)
       .then((response) => {
         const createdCompany = response?.data?.company || response?.company || null;
-        if (createdCompany?.id) {
-          const normalizedCompany = normalizeCompanyForm(createdCompany);
-          setCompanyForm((current) => ({ ...current, ...normalizedCompany }));
-          writeDraft(createdCompany.id, buildWizardPayload({
-            companyForm: normalizedCompany,
-            wizardData,
-            stepProgress: nextProgress,
-            activeStep: 'details',
-          }));
-          removeDraft('new');
-        } else {
-          writeDraft(wizardKey || 'new', buildWizardPayload({
-            companyForm,
-            wizardData,
-            stepProgress: nextProgress,
-            activeStep: 'details',
-          }));
-        }
-
-        setStatusMessage('Company setup saved successfully.');
-        navigate('/super-admin/company-setup#companies', { replace: true });
+        finishSave(createdCompany);
       })
-      .catch((error) => {
-        setCompanyErrors((current) => ({
-          ...current,
-          form: getErrorMessage(error, 'Failed to complete company setup.'),
-        }));
-      })
+      .catch(handleFailure)
       .finally(() => {
         setSubmitting(false);
       });

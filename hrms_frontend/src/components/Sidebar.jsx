@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Icon from './Icon';
-import { getSidebarSectionsForRole } from '../data/navigation/sidebarConfig.js';
+import { getSidebarSectionsForRoleAndPermissions } from '../data/navigation/sidebarConfig.js';
 import { resolveRoleFromStorage, resolveCurrentRoleAsync } from '../data/navigation/index.js';
 import { ROLES } from '../app/config/roles';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,6 +18,46 @@ function getEffectiveRole() {
   }
   
   return resolveRoleFromStorage();
+}
+
+function getStoredPermissions() {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const raw = window.localStorage.getItem('permissions');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function getUserDisplayName(user = {}) {
+  const profile = user.profile || {};
+  const fullName = String(profile.full_name || '').trim();
+  if (fullName) return fullName;
+
+  const combinedName = [
+    profile.first_name || user.first_name || '',
+    profile.middle_name || user.middle_name || '',
+    profile.last_name || user.last_name || '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+
+  if (combinedName) return combinedName;
+
+  const plainName = String(user.name || '').trim();
+  if (plainName) return plainName;
+
+  const emailName = String(user.email || '').trim();
+  if (emailName) return emailName.split('@')[0];
+
+  return '';
 }
 
 // Helper function to generate short names for sections when sidebar is collapsed
@@ -291,7 +331,6 @@ export default function Sidebar({
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false); // Changed to false for collapsed by default
   const effectiveRole = getEffectiveRole();
   const [actualRole, setActualRole] = useState(effectiveRole); // Store actual role from backend
-  const [sidebarSections, setSidebarSections] = useState(getSidebarSectionsForRole(effectiveRole));
   const hiddenSubmenuKeySet = new Set(hiddenSubmenuKeys);
 
   // Fetch fresh role from backend on component mount
@@ -303,13 +342,6 @@ export default function Sidebar({
         const freshRole = await resolveCurrentRoleAsync();
         if (isMounted) {
           setActualRole(freshRole); // Always update actual role
-          
-          // Update sidebar sections based on view mode (if set) or actual role
-          const viewMode = window.localStorage.getItem('hrms_view_mode');
-          const roleForSidebar = viewMode && [ROLES.SUPER_ADMIN, ROLES.COMPANY_ADMIN, ROLES.EMPLOYEE].includes(viewMode)
-            ? viewMode
-            : freshRole;
-          setSidebarSections(getSidebarSectionsForRole(roleForSidebar));
         }
       } catch (error) {
         console.warn('Failed to fetch role from backend, using cached role:', error);
@@ -340,12 +372,14 @@ export default function Sidebar({
 
   const roleForSidebar = getRoleForSidebar();
   const roleForProfile = getRoleForProfile();
+  const sidebarPermissions = Array.isArray(user?.permissions) && user.permissions.length > 0
+    ? user.permissions
+    : getStoredPermissions();
+  const sidebarSections = getSidebarSectionsForRoleAndPermissions(roleForSidebar, sidebarPermissions);
   
   // Get user profile data
   const userProfile = user?.profile;
-  const userName = userProfile?.full_name || userProfile?.first_name
-    ? `${userProfile.first_name || ''}${userProfile.middle_name ? ' ' + userProfile.middle_name : ''} ${userProfile.last_name || ''}`.trim()
-    : null;
+  const userName = getUserDisplayName(user);
   
   const userEmail = user?.email || '';
   const userPhotoUrl = userProfile?.photo_url;

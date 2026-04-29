@@ -1,11 +1,12 @@
 import { ROLES, normalizeRole } from '../../app/config/roles';
 import { ROUTES } from '../../router/routePaths';
 
-const createItem = (label, path, activeKey, children = []) => ({
+const createItem = (label, path, activeKey, children = [], requiredPermissions = []) => ({
   label,
   path,
   activeKey,
   children,
+  requiredPermissions,
 });
 
 const collectActiveKeys = (items = []) =>
@@ -19,6 +20,58 @@ const createSection = ({ key, label, icon, items, activeKeys, path }) => ({
   activeKeys: activeKeys?.length ? activeKeys : collectActiveKeys(items),
   items,
 });
+
+const normalizePermissionCodes = (permissions = []) =>
+  permissions
+    .map((permission) => {
+      if (typeof permission === 'string') return permission;
+      return permission?.code || permission?.permission_code || permission?.name || '';
+    })
+    .map((code) => String(code).trim())
+    .filter(Boolean);
+
+const hasAnyPermission = (userPermissionSet, requiredPermissions = []) =>
+  requiredPermissions.some((permission) => userPermissionSet.has(permission));
+
+const filterSectionByPermissions = (section, userPermissionSet, role) => {
+  if (role !== ROLES.COMPANY_ADMIN) {
+    return section;
+  }
+
+  if (section.key === 'dashboard') {
+    return section;
+  }
+
+  const filteredItems = (section.items || [])
+    .map((item) => {
+      const childItems = Array.isArray(item.children) && item.children.length
+        ? item.children.filter((child) => hasAnyPermission(userPermissionSet, child.requiredPermissions || []))
+        : [];
+
+      const itemAllowed = hasAnyPermission(userPermissionSet, item.requiredPermissions || []);
+      const hasVisibleChildren = childItems.length > 0;
+
+      if (!itemAllowed && !hasVisibleChildren) {
+        return null;
+      }
+
+      return {
+        ...item,
+        children: childItems,
+      };
+    })
+    .filter(Boolean);
+
+  if (!filteredItems.length) {
+    return null;
+  }
+
+  return {
+    ...section,
+    items: filteredItems,
+    activeKeys: collectActiveKeys(filteredItems),
+  };
+};
 
 const dashboardSection = createSection({
   key: 'dashboard',
@@ -155,9 +208,27 @@ const companyAdminSections = [
       'company-admin-organization-designation',
     ],
     items: [
-      createItem('Overview', `${ROUTES.companyAdminMaster}#overview`, 'company-admin-organization-overview'),
-      createItem('Department', `${ROUTES.companyAdminMaster}#department`, 'company-admin-organization-department'),
-      createItem('Designation', `${ROUTES.companyAdminMaster}#designation`, 'company-admin-organization-designation'),
+      createItem(
+        'Overview',
+        `${ROUTES.companyAdminMaster}#overview`,
+        'company-admin-organization-overview',
+        [],
+        ['department.view', 'department.manage', 'role.manage'],
+      ),
+      createItem(
+        'Department',
+        `${ROUTES.companyAdminMaster}#department`,
+        'company-admin-organization-department',
+        [],
+        ['department.view', 'department.manage'],
+      ),
+      createItem(
+        'Designation',
+        `${ROUTES.companyAdminMaster}#designation`,
+        'company-admin-organization-designation',
+        [],
+        ['department.manage', 'role.manage'],
+      ),
     ],
   }),
   createSection({
@@ -170,9 +241,27 @@ const companyAdminSections = [
       'company-setup-users',
     ],
     items: [
-      createItem('Overview', ROUTES.companyAdminEmployeeManagement, 'company-setup-overview'),
-      createItem('Employee List', `${ROUTES.companyAdminEmployeeManagement}#users`, 'company-setup-users'),
-      createItem('Create Employee', `${ROUTES.companyAdminEmployeeManagement}#create`, 'company-setup-users'),
+      createItem(
+        'Overview',
+        ROUTES.companyAdminEmployeeManagement,
+        'company-setup-overview',
+        [],
+        ['employee.view', 'employee.create', 'employee.update', 'employee.delete', 'role.manage'],
+      ),
+      createItem(
+        'Employee List',
+        `${ROUTES.companyAdminEmployeeManagement}#users`,
+        'company-setup-users',
+        [],
+        ['employee.view'],
+      ),
+      createItem(
+        'Create Employee',
+        `${ROUTES.companyAdminEmployeeManagement}#create`,
+        'company-setup-users',
+        [],
+        ['employee.create'],
+      ),
     ],
   }),
   createSection({
@@ -218,10 +307,34 @@ const companyAdminSections = [
       'company-admin-leave-create',
     ],
     items: [
-      createItem('Overview', `${ROUTES.companyAdminLeaveManagement}#overview`, 'company-admin-leave-overview'),
-      createItem('Requests', `${ROUTES.companyAdminLeaveManagement}#requests`, 'company-admin-leave-requests'),
-      createItem('Policies', `${ROUTES.companyAdminLeaveManagement}#policies`, 'company-admin-leave-policies'),
-      createItem('Create Policy', `${ROUTES.companyAdminLeaveManagement}#create`, 'company-admin-leave-create'),
+      createItem(
+        'Overview',
+        `${ROUTES.companyAdminLeaveManagement}#overview`,
+        'company-admin-leave-overview',
+        [],
+        ['leave.view', 'leave.approve'],
+      ),
+      createItem(
+        'Requests',
+        `${ROUTES.companyAdminLeaveManagement}#requests`,
+        'company-admin-leave-requests',
+        [],
+        ['leave.view', 'leave.approve'],
+      ),
+      createItem(
+        'Policies',
+        `${ROUTES.companyAdminLeaveManagement}#policies`,
+        'company-admin-leave-policies',
+        [],
+        ['leave.approve'],
+      ),
+      createItem(
+        'Create Policy',
+        `${ROUTES.companyAdminLeaveManagement}#create`,
+        'company-admin-leave-create',
+        [],
+        ['leave.approve'],
+      ),
     ],
   }),
   createSection({
@@ -273,10 +386,34 @@ const companyAdminSections = [
       'company-admin-payroll-approval',
     ],
     items: [
-      createItem('Overview', `${ROUTES.payroll}#overview`, 'company-admin-payroll-overview'),
-      createItem('Run Payroll', `${ROUTES.payroll}#run-payroll`, 'company-admin-payroll-run'),
-      createItem('Payroll Table', `${ROUTES.payroll}#payroll-table`, 'company-admin-payroll-table'),
-      createItem('Approval Flow', `${ROUTES.payroll}#approval-flow`, 'company-admin-payroll-approval'),
+      createItem(
+        'Overview',
+        `${ROUTES.payroll}#overview`,
+        'company-admin-payroll-overview',
+        [],
+        ['payroll.view', 'payroll.process'],
+      ),
+      createItem(
+        'Run Payroll',
+        `${ROUTES.payroll}#run-payroll`,
+        'company-admin-payroll-run',
+        [],
+        ['payroll.process'],
+      ),
+      createItem(
+        'Payroll Table',
+        `${ROUTES.payroll}#payroll-table`,
+        'company-admin-payroll-table',
+        [],
+        ['payroll.view', 'payroll.process'],
+      ),
+      createItem(
+        'Approval Flow',
+        `${ROUTES.payroll}#approval-flow`,
+        'company-admin-payroll-approval',
+        [],
+        ['payroll.process'],
+      ),
     ],
   }),
   createSection({
@@ -304,4 +441,18 @@ export const roleSidebarSections = {
 
 export function getSidebarSectionsForRole(role) {
   return roleSidebarSections[normalizeRole(role)] ?? employeeSections;
+}
+
+export function getSidebarSectionsForRoleAndPermissions(role, permissions = []) {
+  const normalizedRole = normalizeRole(role);
+  const sections = roleSidebarSections[normalizedRole] ?? employeeSections;
+
+  if (normalizedRole !== ROLES.COMPANY_ADMIN) {
+    return sections;
+  }
+
+  const permissionSet = new Set(normalizePermissionCodes(permissions));
+  return sections
+    .map((section) => filterSectionByPermissions(section, permissionSet, normalizedRole))
+    .filter(Boolean);
 }

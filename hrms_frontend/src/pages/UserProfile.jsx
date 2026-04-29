@@ -12,26 +12,38 @@ export default function UserProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
 
+  const buildProfileFormData = (sourceUser = {}) => {
+    const profile = sourceUser.profile || {};
+    return {
+      first_name: profile.first_name || '',
+      middle_name: profile.middle_name || '',
+      last_name: profile.last_name || '',
+      full_name: profile.full_name || '',
+      email: sourceUser.email || profile.personal_email || '',
+      phone: sourceUser.phone || profile.personal_phone || '',
+      personal_email: profile.personal_email || sourceUser.email || '',
+      personal_phone: profile.personal_phone || sourceUser.phone || '',
+      gender: profile.gender || '',
+      dob: profile.dob || '',
+      photo_url: profile.photo_url || '',
+      employee_code: sourceUser.employee_code || profile.employee_code || '',
+      department: sourceUser.department || profile.department || 'Not assigned',
+      designation: sourceUser.designation || profile.designation || 'Not assigned',
+      joining_date: sourceUser.joining_date || profile.joining_date || 'Not available',
+      reporting_manager: sourceUser.reporting_manager || profile.reporting_manager || 'Not assigned',
+      location: sourceUser.location || profile.location || 'Not specified',
+      address_line1: profile.address_line1 || '',
+      address_line2: profile.address_line2 || '',
+      city: profile.city || '',
+      state: profile.state || '',
+      country: profile.country || '',
+      postal_code: profile.postal_code || '',
+    };
+  };
+
   // Initialize form data from user profile
   useEffect(() => {
-    if (user?.profile) {
-      setFormData({
-        first_name: user.profile.first_name || '',
-        middle_name: user.profile.middle_name || '',
-        last_name: user.profile.last_name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        gender: user.profile.gender || '',
-        dob: user.profile.dob || '',
-        photo_url: user.profile.photo_url || '',
-        employee_code: user.employee_code || '',
-        department: user.department || 'Not assigned',
-        designation: user.designation || 'Not assigned',
-        joining_date: user.joining_date || 'Not available',
-        reporting_manager: user.reporting_manager || 'Not assigned',
-        location: user.location || 'Not specified',
-      });
-    }
+    setFormData(buildProfileFormData(user || {}));
   }, [user]);
 
   // Handle form input changes
@@ -89,6 +101,9 @@ export default function UserProfile() {
     if (user?.profile?.first_name || user?.profile?.last_name) {
       return `${user.profile.first_name || ''} ${user.profile.middle_name || ''} ${user.profile.last_name || ''}`.trim();
     }
+    if (formData.first_name || formData.last_name) {
+      return `${formData.first_name || ''} ${formData.middle_name || ''} ${formData.last_name || ''}`.trim();
+    }
     return 'User';
   };
 
@@ -117,6 +132,8 @@ export default function UserProfile() {
   const userFullName = getUserFullName();
   const userRole = getUserRole();
   const userInitials = getInitials(userFullName);
+  const personalEmail = formData.personal_email || formData.email || 'Not provided';
+  const personalPhone = formData.personal_phone || formData.phone || 'Not provided';
 
   return (
     <DashboardShell activeKey="user-setup">
@@ -148,7 +165,7 @@ export default function UserProfile() {
                   <div className="profile-line-2">
                     <span className="profile-email">
                       <Icon name="mail" size={10} />
-                      {user?.email || 'No email'}
+                      {personalEmail}
                     </span>
                     {company && (
                       <>
@@ -189,15 +206,7 @@ export default function UserProfile() {
                         setIsEditing(false);
                         // Reset form data
                         if (user?.profile) {
-                          setFormData({
-                            first_name: user.profile.first_name || '',
-                            middle_name: user.profile.middle_name || '',
-                            last_name: user.profile.last_name || '',
-                            email: user.email || '',
-                            phone: user.phone || '',
-                            gender: user.profile.gender || '',
-                            dob: user.profile.dob || '',
-                          });
+                          setFormData(buildProfileFormData(user));
                         }
                       }}
                     >
@@ -318,7 +327,7 @@ export default function UserProfile() {
                     </div>
                     <div className="form-group">
                       <label>Email Address</label>
-                      <div className="form-value">{formData.email || 'Not provided'}</div>
+                      <div className="form-value">{personalEmail}</div>
                     </div>
                     <div className="form-group">
                       <label>Phone Number</label>
@@ -331,7 +340,7 @@ export default function UserProfile() {
                           className="form-control"
                         />
                       ) : (
-                        <div className="form-value">{formData.phone || 'Not provided'}</div>
+                        <div className="form-value">{personalPhone}</div>
                       )}
                     </div>
                     <div className="form-group">
@@ -399,6 +408,14 @@ export default function UserProfile() {
                   <div className="info-item">
                     <div className="info-label">Location</div>
                     <div className="info-value">{formData.location}</div>
+                  </div>
+                  <div className="info-item">
+                    <div className="info-label">Address</div>
+                    <div className="info-value">
+                      {[formData.address_line1, formData.address_line2, formData.city, formData.state, formData.postal_code, formData.country]
+                        .filter(Boolean)
+                        .join(', ') || 'Not specified'}
+                    </div>
                   </div>
                   <div className="info-item">
                     <div className="info-label">Employment Type</div>

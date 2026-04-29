@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import authService from '../services/authService';
-import axiosClient from '../services/axiosClient';
 
 // Create Auth Context
 const AuthContext = createContext();
@@ -14,6 +13,30 @@ export const AuthProvider = ({ children }) => {
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const syncAuthState = (responseData = {}) => {
+    const freshUser = responseData.user || responseData;
+    const freshCompany = responseData.company;
+    const roles = responseData.roles || [];
+    const permissions = responseData.permissions || [];
+
+    const userWithRoles = {
+      ...freshUser,
+      roles,
+      permissions,
+    };
+
+    setUser(userWithRoles);
+    setCompany(freshCompany);
+
+    localStorage.setItem('user', JSON.stringify(userWithRoles));
+    localStorage.setItem('permissions', JSON.stringify(permissions));
+    if (freshCompany) {
+      localStorage.setItem('company', JSON.stringify(freshCompany));
+    }
+
+    return { user: userWithRoles, company: freshCompany, permissions };
+  };
 
   // Initialize auth state from localStorage
   useEffect(() => {
@@ -31,25 +54,7 @@ export const AuthProvider = ({ children }) => {
           try {
             const userData = await authService.getCurrentUser();
             if (userData.data) {
-              const responseData = userData.data;
-              const freshUser = responseData.user || responseData;
-              const freshCompany = responseData.company;
-              const roles = responseData.roles || [];
-              
-              // Attach roles to user object for easier access
-              const userWithRoles = {
-                ...freshUser,
-                roles: roles
-              };
-              
-              setUser(userWithRoles);
-              setCompany(freshCompany);
-              
-              // Update localStorage with fresh data
-              localStorage.setItem('user', JSON.stringify(userWithRoles));
-              if (freshCompany) {
-                localStorage.setItem('company', JSON.stringify(freshCompany));
-              }
+              syncAuthState(userData.data);
               
               // Extract and store role from backend response
               try {
@@ -96,31 +101,13 @@ export const AuthProvider = ({ children }) => {
       try {
         const userDataWithRoles = await authService.getCurrentUser();
         if (userDataWithRoles.data) {
-          const responseData = userDataWithRoles.data;
-          const freshUser = responseData.user || responseData;
-          const freshCompany = responseData.company;
-          const roles = responseData.roles || [];
-          
-          // Attach roles to user object for easier access
-          const userWithRoles = {
-            ...freshUser,
-            roles: roles
-          };
-          
-          // Update state with complete user data including roles
-          setUser(userWithRoles);
-          setCompany(freshCompany);
-          
-          // Update localStorage with complete user data
-          localStorage.setItem('user', JSON.stringify(userWithRoles));
-          if (freshCompany) {
-            localStorage.setItem('company', JSON.stringify(freshCompany));
-          }
+          syncAuthState(userDataWithRoles.data);
         }
       } catch (fetchError) {
         console.warn('Failed to fetch user data with roles after login:', fetchError);
         // Continue with basic user data
         localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('permissions', JSON.stringify([]));
         if (companyData) {
           localStorage.setItem('company', JSON.stringify(companyData));
         }
@@ -299,19 +286,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const userData = await authService.getCurrentUser();
       if (userData.data) {
-        const freshUser = userData.data.user || userData.data;
-        const freshCompany = userData.data.company;
-        
-        setUser(freshUser);
-        setCompany(freshCompany);
-        
-        // Update localStorage
-        localStorage.setItem('user', JSON.stringify(freshUser));
-        if (freshCompany) {
-          localStorage.setItem('company', JSON.stringify(freshCompany));
-        }
-        
-        return { user: freshUser, company: freshCompany };
+        return syncAuthState(userData.data);
       }
     } catch (err) {
       console.error('Failed to refresh user data:', err);

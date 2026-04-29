@@ -41,6 +41,10 @@ const authService = {
         // Check for roles in the response data
         localStorage.setItem('hrms_role', response.data.data.roles[0]);
       }
+
+      if (Array.isArray(response.data.data.permissions)) {
+        localStorage.setItem('permissions', JSON.stringify(response.data.data.permissions));
+      }
       
       return response.data;
     } catch (error) {
@@ -123,6 +127,7 @@ const authService = {
     localStorage.removeItem('company');
     localStorage.removeItem('companyId');
     localStorage.removeItem('hrms_token');
+    localStorage.removeItem('permissions');
   },
 
   /**

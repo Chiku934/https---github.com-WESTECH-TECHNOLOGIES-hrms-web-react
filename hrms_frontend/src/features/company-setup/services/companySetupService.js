@@ -31,6 +31,8 @@ function getRoleLabel(role) {
 }
 
 function normalizeCompany(record) {
+  if (!record) return null;
+
   return {
     id: Number(record.id),
     name: normalizeText(record.name),
@@ -243,6 +245,19 @@ export async function createCompany(payload) {
 export async function updateCompany(id, payload) {
   const response = await companyAPI.update(id, payload);
   return normalizeCompany(response.data);
+}
+
+export async function loadCompanySetupCompanyById(id) {
+  const response = await companyAPI.getById(id);
+  const data = response.data || {};
+  return {
+    company: normalizeCompany(data.company || data),
+    admin: data.admin ? {
+      ...data.admin,
+      user: data.admin.user || null,
+      profile: data.admin.profile || null,
+    } : null,
+  };
 }
 
 export async function deleteCompany(id) {
