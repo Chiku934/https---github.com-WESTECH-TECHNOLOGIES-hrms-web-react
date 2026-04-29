@@ -6,6 +6,7 @@ import DashboardShell from '../../shared/components/DashboardShell';
 import Icon from '../../../components/Icon';
 import { ROLES } from '../../../app/config/roles';
 import { resolveEffectiveRoleFromStorage } from '../../../data/navigation/index.js';
+import { ROUTES } from '../../../router/routePaths';
 import '../../super-admin/styles/packages.css';
 import '../../super-admin/styles/clients.css';
 import 'ag-grid-community/styles/ag-grid.css';
@@ -35,7 +36,6 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 const superAdminTabs = [
   { key: 'overview', label: 'Overview' },
   { key: 'companies', label: 'Companies' },
-  { key: 'users', label: 'Employee Management' },
   { key: 'create', label: 'Create Company' },
 ];
 
@@ -1090,6 +1090,11 @@ export default function CompanySetup() {
             type="button"
             className={`superadmin-package-tab ${tab === item.key ? 'active' : ''}`}
             onClick={() => {
+              if (isSuperAdmin && item.key === 'create') {
+                navigate(`${ROUTES.companySetup}/create`, { replace: true });
+                return;
+              }
+
               setTab(item.key);
               if (item.key === 'create') {
                 resetCompanyUserForm();

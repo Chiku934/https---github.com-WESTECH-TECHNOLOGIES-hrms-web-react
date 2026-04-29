@@ -79,7 +79,13 @@ const authService = {
       const response = await axiosClient.get('/auth/me');
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error('Error fetching current user:', error);
+      // Return a structured error object
+      throw {
+        success: false,
+        message: error.response?.data?.message || 'Failed to fetch user data',
+        error: error.response?.data || error
+      };
     }
   },
 
@@ -173,6 +179,12 @@ const authService = {
     try {
       const response = await authService.getCurrentUser();
       console.log('Full API response from /auth/me:', response);
+      
+      // Check if response exists and has data
+      if (!response || !response.data) {
+        console.warn('Invalid response from /auth/me:', response);
+        throw new Error('Invalid response from server');
+      }
       
       // The API response structure is: { success: true, data: { ... }, message: '' }
       // Where data contains: { user: {...}, company: {...}, roles: [...], permissions: [...] }

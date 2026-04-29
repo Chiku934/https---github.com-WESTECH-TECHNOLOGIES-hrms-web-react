@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
           // Try to refresh user data from backend
           try {
             const userData = await authService.getCurrentUser();
-            if (userData.data) {
+            if (userData && userData.data) {
               syncAuthState(userData.data);
               
               // Extract and store role from backend response
@@ -64,11 +64,12 @@ export const AuthProvider = ({ children }) => {
                 console.log('Role refreshed and stored from backend');
               } catch (roleError) {
                 console.warn('Failed to refresh role from backend:', roleError);
+                // Continue with stored data - don't let this break the auth flow
               }
             }
           } catch (refreshError) {
             console.warn('Failed to refresh user data:', refreshError);
-            // Continue with stored data
+            // Continue with stored data - don't let this break the auth flow
           }
         }
       } catch (err) {

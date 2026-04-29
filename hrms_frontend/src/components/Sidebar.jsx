@@ -67,6 +67,11 @@ function getStoredPermissions() {
 }
 
 function getUserDisplayName(user = {}) {
+  // Check if user is null or undefined
+  if (!user) {
+    return 'User';
+  }
+  
   const profile = user.profile || {};
   const fullName = String(profile.full_name || '').trim();
   if (fullName) return fullName;
@@ -405,6 +410,12 @@ export default function Sidebar({
       return ROLES.EMPLOYEE;
     }
     
+    // Always clear persistent view mode for Super Admin unless in preview mode
+    if (actualRole === ROLES.SUPER_ADMIN && !isCompanyPreviewRoute && !isEmployeePreviewRoute) {
+      window.localStorage.removeItem('hrms_persistent_view_mode');
+      return ROLES.SUPER_ADMIN;
+    }
+    
     // Use persistent view mode if set, otherwise use regular view mode
     const effectiveViewMode = persistentViewMode || viewMode;
     
@@ -448,7 +459,7 @@ export default function Sidebar({
   
   // Get user profile data
   const userProfile = user?.profile;
-  const userName = getUserDisplayName(user);
+  const userName = getUserDisplayName(user || {});
   
   const userEmail = user?.email || '';
   const userPhotoUrl = userProfile?.photo_url;
