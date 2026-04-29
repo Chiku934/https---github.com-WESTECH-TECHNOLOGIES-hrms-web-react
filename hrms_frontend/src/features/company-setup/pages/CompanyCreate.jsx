@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardShell from '../../shared/components/DashboardShell';
 import { ROLES } from '../../../app/config/roles';
-import { resolveRoleFromStorage } from '../../../data/navigation/index.js';
+import { resolveEffectiveRoleFromStorage } from '../../../data/navigation/index.js';
 import authService from '../../../services/authService';
 import {
   companySetupCompanyStatusOptions,
@@ -331,7 +331,7 @@ function StepStateChip({ value }) {
 export default function CompanyCreate() {
   const navigate = useNavigate();
   const location = useLocation();
-  const role = resolveRoleFromStorage();
+  const role = resolveEffectiveRoleFromStorage();
   const isSuperAdmin = role === ROLES.SUPER_ADMIN;
   const existingCompany = location.state?.company || null;
 

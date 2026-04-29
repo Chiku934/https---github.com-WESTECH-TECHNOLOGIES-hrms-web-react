@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Icon from './Icon';
-import { getSidebarSectionsForRoleAndPermissions } from '../data/navigation/sidebarConfig.js';
+import { getSidebarSectionsForRoleAndPermissions, viewModeSidebarSections } from '../data/navigation/sidebarConfig.js';
 import { resolveRoleFromStorage, resolveCurrentRoleAsync } from '../data/navigation/index.js';
+import { normalizeCompanyPermissionCodes } from '../data/navigation/companyPermissions';
 import { ROLES } from '../app/config/roles';
 import { useAuth } from '../contexts/AuthContext';
+import { ROUTES } from '../router/routePaths';
 
 // Helper function to get effective role (view mode if set, otherwise actual role)
 function getEffectiveRole() {
@@ -26,10 +28,39 @@ function getStoredPermissions() {
   }
 
   try {
-    const raw = window.localStorage.getItem('permissions');
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    const permissions = [];
+
+    const rawPermissions = window.localStorage.getItem('permissions');
+    if (rawPermissions) {
+      const parsed = JSON.parse(rawPermissions);
+      if (Array.isArray(parsed)) {
+        permissions.push(...parsed);
+      }
+    }
+
+    const rawCompany = window.localStorage.getItem('company');
+    if (rawCompany) {
+      const parsedCompany = JSON.parse(rawCompany);
+      if (Array.isArray(parsedCompany?.permissions)) {
+        permissions.push(...parsedCompany.permissions);
+      }
+      if (Array.isArray(parsedCompany?.extra_data?.permissions)) {
+        permissions.push(...parsedCompany.extra_data.permissions);
+      }
+    }
+
+    const rawUser = window.localStorage.getItem('user');
+    if (rawUser) {
+      const parsedUser = JSON.parse(rawUser);
+      if (Array.isArray(parsedUser?.permissions)) {
+        permissions.push(...parsedUser.permissions);
+      }
+      if (Array.isArray(parsedUser?.extra_data?.permissions)) {
+        permissions.push(...parsedUser.extra_data.permissions);
+      }
+    }
+
+    return [...normalizeCompanyPermissionCodes(permissions)];
   } catch (error) {
     return [];
   }
@@ -359,9 +390,33 @@ export default function Sidebar({
   // Get role for sidebar navigation (view mode if set, otherwise actual role)
   const getRoleForSidebar = () => {
     const viewMode = window.localStorage.getItem('hrms_view_mode');
-    if (viewMode && [ROLES.SUPER_ADMIN, ROLES.COMPANY_ADMIN, ROLES.EMPLOYEE].includes(viewMode)) {
-      return viewMode;
+    const persistentViewMode = window.localStorage.getItem('hrms_persistent_view_mode');
+    const isCompanyPreviewRoute = location.pathname === ROUTES.superAdminCompanyView;
+    const isEmployeePreviewRoute = location.pathname === ROUTES.superAdminEmployeeView;
+    
+    // Set persistent view mode when entering preview routes
+    if (isCompanyPreviewRoute) {
+      window.localStorage.setItem('hrms_persistent_view_mode', ROLES.COMPANY_ADMIN);
+      return ROLES.COMPANY_ADMIN;
     }
+    
+    if (isEmployeePreviewRoute) {
+      window.localStorage.setItem('hrms_persistent_view_mode', ROLES.EMPLOYEE);
+      return ROLES.EMPLOYEE;
+    }
+    
+    // Use persistent view mode if set, otherwise use regular view mode
+    const effectiveViewMode = persistentViewMode || viewMode;
+    
+    if (effectiveViewMode && [ROLES.SUPER_ADMIN, ROLES.COMPANY_ADMIN, ROLES.EMPLOYEE].includes(effectiveViewMode)) {
+      return effectiveViewMode;
+    }
+    
+    // Clear persistent view mode when returning to normal Super Admin mode
+    if (persistentViewMode) {
+      window.localStorage.removeItem('hrms_persistent_view_mode');
+    }
+    
     return actualRole;
   };
 
@@ -375,7 +430,21 @@ export default function Sidebar({
   const sidebarPermissions = Array.isArray(user?.permissions) && user.permissions.length > 0
     ? user.permissions
     : getStoredPermissions();
-  const sidebarSections = getSidebarSectionsForRoleAndPermissions(roleForSidebar, sidebarPermissions);
+  
+  // Use view-mode-specific configurations (without Dashboard) when in persistent view mode
+  const persistentViewMode = window.localStorage.getItem('hrms_persistent_view_mode');
+  
+  let sidebarSections;
+  if (persistentViewMode === ROLES.COMPANY_ADMIN) {
+    // For persistent Company View, use Company Admin sections without Dashboard
+    sidebarSections = viewModeSidebarSections[ROLES.COMPANY_ADMIN];
+  } else if (persistentViewMode === ROLES.EMPLOYEE) {
+    // For persistent Employee View, use Employee sections without Dashboard
+    sidebarSections = viewModeSidebarSections[ROLES.EMPLOYEE];
+  } else {
+    // For normal mode, use role-based sections with permissions
+    sidebarSections = getSidebarSectionsForRoleAndPermissions(roleForSidebar, sidebarPermissions);
+  }
   
   // Get user profile data
   const userProfile = user?.profile;
@@ -488,9 +557,24 @@ export default function Sidebar({
         </button>
         
         {isSidebarExpanded && (
-          <div className="sidebar-version">
-            <span>v2.1.4</span>
-          </div>
+          <>
+            {(persistentViewMode === ROLES.COMPANY_ADMIN || persistentViewMode === ROLES.EMPLOYEE) && (
+              <button
+                type="button"
+                className="sidebar-return-btn"
+                onClick={() => {
+                  window.localStorage.removeItem('hrms_persistent_view_mode');
+                  navigate('/dashboard');
+                }}
+              >
+                <Icon name="arrow-left" size={16} />
+                <span>Return to Super Admin</span>
+              </button>
+            )}
+            <div className="sidebar-version">
+              <span>v2.1.4</span>
+            </div>
+          </>
         )}
       </div>
     </div>

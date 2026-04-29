@@ -4,6 +4,8 @@ export const ROUTES = {
   userDashboard: '/user-dashboard',
   userSetup: '/user-setup',
   companySetup: '/super-admin/company-setup',
+  superAdminCompanyView: '/super-admin/company-view',
+  superAdminEmployeeView: '/super-admin/employee-view',
   superAdminPackages: '/super-admin/packages',
   superAdminMaster: '/super-admin/master',
   superAdminLocationMaster: '/super-admin/location-master',

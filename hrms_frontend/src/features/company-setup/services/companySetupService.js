@@ -48,6 +48,11 @@ function normalizeCompany(record) {
     departmentCount: Number(record.departmentCount || record.department_count || 0),
     designationCount: Number(record.designationCount || record.designation_count || 0),
     roleCount: Number(record.roleCount || record.role_count || 0),
+    permissions: Array.isArray(record.permissions)
+      ? [...record.permissions]
+      : Array.isArray(record.extra_data?.permissions)
+        ? [...record.extra_data.permissions]
+        : [],
   };
 }
 

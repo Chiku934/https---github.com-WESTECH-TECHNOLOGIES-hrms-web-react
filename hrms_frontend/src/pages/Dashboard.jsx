@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Icon from '../components/Icon';
 import DashboardShell from '../features/shared/components/DashboardShell';
-import { resolveRoleFromStorage } from '../data/navigation/index.js';
+import { resolveEffectiveRoleFromStorage } from '../data/navigation/index.js';
 import { ROLES } from '../app/config/roles.js';
 import { ROUTES } from '../router/routePaths.js';
 import SuperAdminDashboard from '../features/super-admin/pages/Dashboard';
@@ -566,9 +566,15 @@ function ManagerDashboard() {
 }
 
 export default function Dashboard() {
-  const role = resolveRoleFromStorage();
-
-  if (role === ROLES.SUPER_ADMIN) {
+  const role = resolveEffectiveRoleFromStorage();
+  const location = useLocation();
+  
+  // Check if we're in preview mode (Company View or Employee View)
+  const isCompanyPreviewRoute = location.pathname === ROUTES.superAdminCompanyView;
+  const isEmployeePreviewRoute = location.pathname === ROUTES.superAdminEmployeeView;
+  
+  // Always show Super Admin dashboard when in preview mode
+  if (role === ROLES.SUPER_ADMIN || isCompanyPreviewRoute || isEmployeePreviewRoute) {
     return <SuperAdminDashboard />;
   }
 

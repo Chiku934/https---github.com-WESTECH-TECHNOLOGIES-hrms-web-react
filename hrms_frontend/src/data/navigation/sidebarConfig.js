@@ -1,5 +1,6 @@
 import { ROLES, normalizeRole } from '../../app/config/roles';
 import { ROUTES } from '../../router/routePaths';
+import { normalizeCompanyPermissionCodes } from './companyPermissions';
 
 const createItem = (label, path, activeKey, children = [], requiredPermissions = []) => ({
   label,
@@ -21,14 +22,9 @@ const createSection = ({ key, label, icon, items, activeKeys, path }) => ({
   items,
 });
 
-const normalizePermissionCodes = (permissions = []) =>
-  permissions
-    .map((permission) => {
-      if (typeof permission === 'string') return permission;
-      return permission?.code || permission?.permission_code || permission?.name || '';
-    })
-    .map((code) => String(code).trim())
-    .filter(Boolean);
+const normalizePermissionCodes = (permissions = []) => [
+  ...normalizeCompanyPermissionCodes(permissions),
+];
 
 const hasAnyPermission = (userPermissionSet, requiredPermissions = []) =>
   requiredPermissions.some((permission) => userPermissionSet.has(permission));
@@ -196,8 +192,52 @@ const employeeSections = [
   }),
 ];
 
-const companyAdminSections = [
-  dashboardSection,
+const employeeSectionsWithoutDashboard = [
+  createSection({
+    key: 'overview',
+    label: 'Overview',
+    icon: 'house',
+    items: [createItem('Overview', ROUTES.dashboard, 'dashboard')],
+  }),
+  createSection({
+    key: 'attendance',
+    label: 'Attendance',
+    icon: 'clock',
+    items: [createItem('Attendance', ROUTES.userAttendance, 'user-attendance')],
+  }),
+  createSection({
+    key: 'leave',
+    label: 'Leave',
+    icon: 'calendar',
+    items: [createItem('Leave', ROUTES.userLeave, 'user-leave')],
+  }),
+  createSection({
+    key: 'timesheet',
+    label: 'Timesheet',
+    icon: 'clipboard',
+    items: [createItem('Timesheet', ROUTES.timesheet, 'timesheet-overview')],
+  }),
+  createSection({
+    key: 'performance',
+    label: 'Performance',
+    icon: 'chart-line',
+    items: [createItem('Performance', ROUTES.userPerformance, 'user-performance')],
+  }),
+  createSection({
+    key: 'expenses',
+    label: 'Expenses',
+    icon: 'wallet',
+    items: [createItem('Expenses', ROUTES.userExpenses, 'user-expenses')],
+  }),
+];
+
+const companyAdminSectionsWithoutDashboard = [
+  createSection({
+    key: 'overview',
+    label: 'Overview',
+    icon: 'house',
+    items: [createItem('Overview', ROUTES.dashboard, 'dashboard')],
+  }),
   createSection({
     key: 'organization',
     label: 'Organization',
@@ -433,10 +473,21 @@ const companyAdminSections = [
   }),
 ];
 
+// Create the original companyAdminSections with Dashboard for normal role-based navigation
+const companyAdminSections = [
+  dashboardSection,
+  ...companyAdminSectionsWithoutDashboard
+];
+
 export const roleSidebarSections = {
   [ROLES.SUPER_ADMIN]: superAdminSections,
   [ROLES.COMPANY_ADMIN]: companyAdminSections,
   [ROLES.EMPLOYEE]: employeeSections,
+};
+
+export const viewModeSidebarSections = {
+  [ROLES.COMPANY_ADMIN]: companyAdminSectionsWithoutDashboard,
+  [ROLES.EMPLOYEE]: employeeSectionsWithoutDashboard,
 };
 
 export function getSidebarSectionsForRole(role) {

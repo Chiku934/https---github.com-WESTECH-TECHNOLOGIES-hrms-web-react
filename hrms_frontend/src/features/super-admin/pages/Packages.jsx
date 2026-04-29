@@ -4,6 +4,7 @@ import { AgGridReact } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import Icon from '../../../components/Icon';
 import DashboardShell from '../../shared/components/DashboardShell';
+import { resolveEffectiveRoleFromStorage } from '../../../data/navigation/index.js';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import '../styles/packages.css';
@@ -231,6 +232,7 @@ function PackageForm({ formData, setFormData, onSubmit, submitLabel, errors = {}
 export default function SuperAdminPackages() {
   const location = useLocation();
   const navigate = useNavigate();
+  const role = resolveEffectiveRoleFromStorage();
   const [tab, setTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [packages, setPackages] = useState(superAdminPackageList);
@@ -473,7 +475,7 @@ export default function SuperAdminPackages() {
   };
 
   return (
-    <DashboardShell activeKey={sidebarActiveKey} headerProps={{ companyText: 'Super Admin' }}>
+    <DashboardShell activeKey={sidebarActiveKey} headerProps={{ companyText: role === 'super-admin' ? 'Super Admin' : 'Company Admin' }}>
       <div className="superadmin-package-tabs">
         {tabs.map((item) => (
           <Link

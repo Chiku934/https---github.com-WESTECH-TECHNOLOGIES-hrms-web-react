@@ -1,7 +1,7 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Icon from './Icon';
-import { resolveRoleFromStorage, roleTopNavItems, subNavItems, topNavItems } from '../data/navigation/index.js';
+import { resolveEffectiveRoleFromStorage, resolveRoleFromStorage, roleTopNavItems, subNavItems, topNavItems } from '../data/navigation/index.js';
 import { ROUTES } from '../router/routePaths';
 import { ROLES } from '../app/config/roles';
 
@@ -37,13 +37,17 @@ export default function Header({
   moduleNavItems = topNavItems,
   subNavItems: customSubNavItems = subNavItems,
 }) {
-  const role = resolveRoleFromStorage();
+  const actualRole = resolveRoleFromStorage();
+  const role = resolveEffectiveRoleFromStorage();
+  const location = useLocation();
   const navigate = useNavigate();
   const roleModuleNavItems = roleTopNavItems[role] ?? topNavItems;
   const effectiveModuleNavItems = moduleNavItems === topNavItems ? roleModuleNavItems : moduleNavItems;
+  const isCompanyPreviewRoute = location.pathname === ROUTES.superAdminCompanyView;
+  const isEmployeePreviewRoute = location.pathname === ROUTES.superAdminEmployeeView;
 
   // Check if user is super admin
-  const isSuperAdmin = role === ROLES.SUPER_ADMIN;
+  const isSuperAdmin = actualRole === ROLES.SUPER_ADMIN;
   
   // Get current view mode from localStorage (default to actual role)
   const getCurrentViewMode = () => {
@@ -53,27 +57,40 @@ export default function Header({
 
   // Handle view mode switch
   const handleSwitchToCompanyAdminView = () => {
-    window.localStorage.setItem('hrms_view_mode', ROLES.COMPANY_ADMIN);
-    window.location.reload(); // Reload to update sidebar
+    window.localStorage.setItem('hrms_persistent_view_mode', ROLES.COMPANY_ADMIN);
+    navigate(ROUTES.superAdminCompanyView, { replace: true });
   };
 
   const handleSwitchToEmployeeView = () => {
-    window.localStorage.setItem('hrms_view_mode', ROLES.EMPLOYEE);
-    window.location.reload(); // Reload to update sidebar
+    window.localStorage.setItem('hrms_persistent_view_mode', ROLES.EMPLOYEE);
+    navigate(ROUTES.superAdminEmployeeView, { replace: true });
   };
 
   const handleSwitchToSuperAdminView = () => {
-    window.localStorage.removeItem('hrms_view_mode');
-    window.location.reload(); // Reload to update sidebar
+    window.localStorage.removeItem('hrms_persistent_view_mode');
+    navigate(ROUTES.dashboard, { replace: true });
   };
 
-  const currentViewMode = getCurrentViewMode();
-  const isInCompanyAdminView = currentViewMode === ROLES.COMPANY_ADMIN;
-  const isInEmployeeView = currentViewMode === ROLES.EMPLOYEE;
-  const isInSuperAdminView = !isInCompanyAdminView && !isInEmployeeView;
+  const currentViewMode = isCompanyPreviewRoute
+    ? 'company-view'
+    : isEmployeePreviewRoute
+      ? 'employee-view'
+      : getCurrentViewMode();
+  const persistentViewMode = window.localStorage.getItem('hrms_persistent_view_mode');
+  const isInCompanyAdminView = currentViewMode === ROLES.COMPANY_ADMIN || isCompanyPreviewRoute || persistentViewMode === ROLES.COMPANY_ADMIN;
+  const isInEmployeeView = currentViewMode === ROLES.EMPLOYEE || isEmployeePreviewRoute || persistentViewMode === ROLES.EMPLOYEE;
+  const isInSuperAdminView = !isInCompanyAdminView && !isInEmployeeView && !persistentViewMode;
   
-  // Display text for company area - show view mode if different from role
-  const displayRoleText = currentViewMode.replace('-', ' ').toUpperCase();
+  // Display text for company area - show proper view mode text
+  const displayRoleText = persistentViewMode === ROLES.COMPANY_ADMIN
+    ? 'COMPANY VIEW'
+    : persistentViewMode === ROLES.EMPLOYEE
+      ? 'EMPLOYEE VIEW'
+      : isCompanyPreviewRoute
+        ? 'COMPANY VIEW'
+        : isEmployeePreviewRoute
+          ? 'EMPLOYEE VIEW'
+          : currentViewMode.replace('-', ' ').toUpperCase();
 
   return (
     <>
@@ -191,7 +208,7 @@ export default function Header({
         ) : null}
       </div>
 
-      {showModuleNav ? (
+      {showModuleNav && !isCompanyPreviewRoute && !isEmployeePreviewRoute && !persistentViewMode ? (
         <nav className="myteam-module-nav" aria-label="Primary navigation">
           {effectiveModuleNavItems.map((item) => (
             <NavTarget

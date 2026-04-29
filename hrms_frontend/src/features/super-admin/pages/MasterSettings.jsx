@@ -4,6 +4,7 @@ import { AgGridReact } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import DashboardShell from '../../shared/components/DashboardShell';
 import Icon from '../../../components/Icon';
+import { resolveEffectiveRoleFromStorage } from '../../../data/navigation/index.js';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import '../styles/packages.css';
@@ -264,6 +265,7 @@ function loadMasters() {
 export default function SuperAdminMasterSettings() {
   const location = useLocation();
   const navigate = useNavigate();
+  const role = resolveEffectiveRoleFromStorage();
   const [tab, setTab] = useState('masters');
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
@@ -557,7 +559,7 @@ export default function SuperAdminMasterSettings() {
   return (
     <DashboardShell
       activeKey={sidebarActiveKey}
-      headerProps={{ companyText: 'Super Admin' }}
+      headerProps={{ companyText: role === 'super-admin' ? 'Super Admin' : 'Company Admin' }}
       hiddenSidebarSubmenuKeys={['super-admin-master-overview']}
     >
       <div className="superadmin-package-tabs">
@@ -577,7 +579,6 @@ export default function SuperAdminMasterSettings() {
         <div className="dashboard-section-heading">{tab === 'masters' ? 'Master Directory' : 'Create Master'}</div>
       </div>
 
-      {/*
       {tab === 'overview' ? (
         <div className="superadmin-package-layout">
           <div className="superadmin-package-sidebar">
@@ -637,7 +638,6 @@ export default function SuperAdminMasterSettings() {
           </div>
         </div>
       ) : null}
-      */}
 
       {tab === 'masters' ? (
         <div className="superadmin-package-layout">

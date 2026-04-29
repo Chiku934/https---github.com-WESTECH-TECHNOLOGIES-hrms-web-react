@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { ROLES } from '../../app/config/roles';
 import Login from '../../pages/Login';
 import Dashboard from '../../pages/Dashboard';
@@ -31,6 +31,8 @@ import FeaturePlaceholderPage from '../../features/shared/components/FeaturePlac
 import SuperAdminMasterSettings from '../../features/super-admin/pages/MasterSettings';
 import SuperAdminPackages from '../../features/super-admin/pages/Packages';
 import SuperAdminReports from '../../features/super-admin/pages/Reports';
+// import SuperAdminCompanyView from '../../features/super-admin/pages/CompanyView';
+// import SuperAdminEmployeeView from '../../features/super-admin/pages/EmployeeView';
 import CompanyAdminMaster from '../../features/company-admin/pages/Master';
 import CompanyAdminAttendance from '../../features/company-admin/pages/Attendance';
 import CompanyAdminHolidayList from '../../features/company-admin/pages/HolidayList';
@@ -43,6 +45,7 @@ import CompanySetup from '../../features/company-setup/pages/CompanySetup';
 import CompanyCreate from '../../features/company-setup/pages/CompanyCreate';
 import { ROUTES } from '../../router/routePaths';
 import { resolveRoleFromStorage } from '../../data/navigation/index.js';
+import { hasCompanyFeatureAccess, getStoredCompanyPermissions } from '../../data/navigation/companyPermissions';
 
 function placeholder(path, title, description, activeKey, extra = {}) {
   return {
@@ -71,6 +74,8 @@ const routeAccess = new Map([
   [ROUTES.superAdminMaster, superAdminOnlyRoles],
   [ROUTES.superAdminLocationMaster, superAdminOnlyRoles],
   [ROUTES.superAdminReports, superAdminOnlyRoles],
+  [ROUTES.superAdminCompanyView, superAdminOnlyRoles],
+  [ROUTES.superAdminEmployeeView, superAdminOnlyRoles],
   [ROUTES.companyAdminEmployeeManagement, adminRoles],
   [ROUTES.companyAdminMaster, adminRoles],
   [ROUTES.companyAdminLeaveManagement, adminRoles],
@@ -103,10 +108,31 @@ const routeAccess = new Map([
   [ROUTES.myTeamLeaveApprovals, adminRoles],
 ]);
 
+const companyFeatureAccess = new Map([
+  [ROUTES.companyAdminEmployeeManagement, 'employee-management'],
+  [ROUTES.companyAdminMaster, 'employee-management'],
+  [ROUTES.companyAdminAttendance, 'attendance'],
+  [ROUTES.companyAdminHolidayList, 'attendance'],
+  [ROUTES.companyAdminLeaveManagement, 'leave'],
+  [ROUTES.companyAdminProjectManagement, 'projects'],
+  [ROUTES.companyAdminCreateTeam, 'projects'],
+  [ROUTES.companyAdminAssignTeam, 'projects'],
+  [ROUTES.companyAdminTimesheet, 'timesheet'],
+  [ROUTES.companyAdminReports, 'reports'],
+  [ROUTES.payroll, 'payroll'],
+]);
+
 function RoleGate({ allowedRoles, children }) {
   const role = resolveRoleFromStorage();
+  const location = useLocation();
+  const permissions = getStoredCompanyPermissions();
 
   if (!allowedRoles.includes(role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  const featureKey = companyFeatureAccess.get(location.pathname);
+  if (role === ROLES.COMPANY_ADMIN && featureKey && !hasCompanyFeatureAccess(permissions, featureKey)) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -176,6 +202,8 @@ const rawRouteConfig = [
   { path: ROUTES.superAdminMaster, element: <SuperAdminMasterSettings /> },
   { path: ROUTES.superAdminLocationMaster, element: <SuperAdminMasterSettings /> },
   { path: ROUTES.superAdminReports, element: <SuperAdminReports /> },
+  { path: ROUTES.superAdminCompanyView, element: <Dashboard /> },
+  { path: ROUTES.superAdminEmployeeView, element: <Dashboard /> },
   { path: ROUTES.companySetup, element: <CompanySetup /> },
   { path: '/super-admin/company-setup/create', element: <CompanyCreate /> },
   { path: ROUTES.userSetup, element: <UserProfile /> },

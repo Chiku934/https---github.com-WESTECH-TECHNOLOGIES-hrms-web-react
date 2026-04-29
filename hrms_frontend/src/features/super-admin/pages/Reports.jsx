@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardShell from '../../shared/components/DashboardShell';
 import Icon from '../../../components/Icon';
+import { resolveEffectiveRoleFromStorage } from '../../../data/navigation/index.js';
 import '../styles/packages.css';
 import {
   superAdminReportOverviewGuides,
@@ -42,6 +43,7 @@ function SmallCard({ title, children }) {
 export default function SuperAdminReports() {
   const location = useLocation();
   const navigate = useNavigate();
+  const role = resolveEffectiveRoleFromStorage();
   const [tab, setTab] = useState('overview');
 
   const periodRows = useMemo(() => superAdminReportPeriods[tab] || superAdminReportPeriods.monthly, [tab]);
@@ -61,7 +63,7 @@ export default function SuperAdminReports() {
   }, [location.hash, navigate, tab]);
 
   return (
-    <DashboardShell activeKey={sidebarActiveKey} headerProps={{ companyText: 'Super Admin' }}>
+    <DashboardShell activeKey={sidebarActiveKey} headerProps={{ companyText: role === 'super-admin' ? 'Super Admin' : 'Company Admin' }}>
       <div className="superadmin-package-tabs">
         {tabs.map((item) => (
           <button

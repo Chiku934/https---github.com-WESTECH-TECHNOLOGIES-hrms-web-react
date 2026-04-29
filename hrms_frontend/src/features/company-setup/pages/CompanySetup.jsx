@@ -5,7 +5,7 @@ import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import DashboardShell from '../../shared/components/DashboardShell';
 import Icon from '../../../components/Icon';
 import { ROLES } from '../../../app/config/roles';
-import { resolveRoleFromStorage } from '../../../data/navigation/index.js';
+import { resolveEffectiveRoleFromStorage } from '../../../data/navigation/index.js';
 import '../../super-admin/styles/packages.css';
 import '../../super-admin/styles/clients.css';
 import 'ag-grid-community/styles/ag-grid.css';
@@ -35,23 +35,27 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 const superAdminTabs = [
   { key: 'overview', label: 'Overview' },
   { key: 'companies', label: 'Companies' },
+  { key: 'users', label: 'Employee Management' },
   { key: 'create', label: 'Create Company' },
 ];
 
 const companyAdminTabs = [
   { key: 'overview', label: 'Overview' },
-  { key: 'users', label: 'Employee Management' },
+  { key: 'users', label: 'Employee List' },
+  { key: 'create', label: 'Create Employee' },
 ];
 
 const tabToHash = {
   overview: '#overview',
   companies: '#companies',
+  users: '#users',
   create: '#create',
 };
 
 const hashToTab = {
   '#overview': 'overview',
   '#companies': 'companies',
+  '#users': 'users',
   '#create': 'create',
 };
 
@@ -300,8 +304,9 @@ function CompanyUserActionsCell({ data, onEdit, onDelete }) {
 export default function CompanySetup() {
   const location = useLocation();
   const navigate = useNavigate();
-  const role = resolveRoleFromStorage();
-  const isSuperAdmin = role === ROLES.SUPER_ADMIN;
+  const role = resolveEffectiveRoleFromStorage();
+  const persistentViewMode = window.localStorage.getItem('hrms_persistent_view_mode');
+  const isSuperAdmin = role === ROLES.SUPER_ADMIN && persistentViewMode !== ROLES.COMPANY_ADMIN;
   const tabs = isSuperAdmin ? superAdminTabs : companyAdminTabs;
   const defaultTab = tabs[0].key;
   const [tab, setTab] = useState(defaultTab);
@@ -318,6 +323,8 @@ export default function CompanySetup() {
   const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
+    if (tab === 'create') return; // Don't override the create tab with hash changes
+    
     const nextTab = hashToTab[location.hash] || defaultTab;
     if (tabs.some((item) => item.key === nextTab) && tab !== nextTab) {
       setTab(nextTab);
@@ -325,7 +332,7 @@ export default function CompanySetup() {
   }, [defaultTab, location.hash, tab, tabs]);
 
   useEffect(() => {
-    if (!location.hash) {
+    if (!location.hash && tab !== 'create') {
       navigate(tabToHash[tab] || '#overview', { replace: true });
     }
   }, [location.hash, navigate, tab]);
@@ -391,6 +398,8 @@ export default function CompanySetup() {
 
   const sidebarActiveKey = tab === 'companies'
     ? 'company-setup-companies'
+    : tab === 'users'
+      ? 'company-setup-users'
     : tab === 'create'
       ? 'company-setup-create'
       : 'company-setup-overview';
@@ -879,6 +888,185 @@ export default function CompanySetup() {
     </div>
   );
 
+  const employeeListTab = (
+    <div className="dashboard-layout superadmin-package-layout company-admin-list-page">
+      <div className="superadmin-package-workspace">
+        <div className="superadmin-package-table-card superadmin-master-grid-card">
+          <div className="superadmin-section-header company-list-table-header">
+            <div className="dashboard-section-heading">Employee List</div>
+          </div>
+
+          <div className="superadmin-client-toolbar" style={{ gap: 12, flexWrap: 'wrap' }}>
+            <div className="superadmin-searchbox">
+              <Icon name="search" size={12} />
+              <input
+                type="text"
+                placeholder="Search employee assignments"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+            </div>
+            <div className="superadmin-searchbox" style={{ minWidth: 240 }}>
+              <Icon name="building" size={12} />
+              <select value={companyFilter} onChange={(event) => setCompanyFilter(event.target.value)}>
+                <option value="all">All companies</option>
+                {companyOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="superadmin-master-grid superadmin-package-grid">
+            <AgGridReact
+              rowData={visibleCompanyUsers}
+              columnDefs={companyUserGridColumnDefs}
+              defaultColDef={defaultColDef}
+              domLayout="autoHeight"
+              animateRows
+              getRowId={(params) => params.data.id}
+              suppressCellFocus
+              pagination
+              paginationPageSize={6}
+              paginationPageSizeSelector={[6, 10, 15]}
+              headerHeight={52}
+              rowHeight={56}
+              noRowsOverlayComponent={CompanyUserGridEmptyOverlay}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const createEmployeeTab = (
+    <div className="dashboard-layout superadmin-package-layout company-admin-list-page">
+      <div className="superadmin-package-workspace">
+        <div className="superadmin-package-table-card superadmin-master-grid-card">
+          <div className="superadmin-section-header company-list-table-header">
+            <div className="dashboard-section-heading">Create Employee</div>
+          </div>
+
+          <SmallCard
+            title={companyUserForm.id ? 'Edit Company User' : 'Assign Company User'}
+            className="superadmin-package-form-card"
+          >
+            <form className="superadmin-package-form-grid" onSubmit={submitCompanyUser}>
+              <label className="superadmin-package-form-field">
+                <span>Company</span>
+                <select
+                  value={companyUserForm.companyId}
+                  onChange={(event) => setCompanyUserForm((current) => ({ ...current, companyId: event.target.value }))}
+                >
+                  <option value="">Select company</option>
+                  {companyOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {companyUserErrors.companyId ? <small className="superadmin-package-error">{companyUserErrors.companyId}</small> : null}
+              </label>
+
+              <label className="superadmin-package-form-field">
+                <span>User</span>
+                <select
+                  value={companyUserForm.userId}
+                  onChange={(event) => setCompanyUserForm((current) => ({ ...current, userId: event.target.value }))}
+                >
+                  <option value="">Select user</option>
+                  {userOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {companyUserErrors.userId ? <small className="superadmin-package-error">{companyUserErrors.userId}</small> : null}
+              </label>
+
+              <label className="superadmin-package-form-field">
+                <span>Employee Code</span>
+                <input
+                  value={companyUserForm.employeeCode}
+                  onChange={(event) => setCompanyUserForm((current) => ({ ...current, employeeCode: event.target.value }))}
+                  placeholder="EMP001"
+                />
+                {companyUserErrors.employeeCode ? <small className="superadmin-package-error">{companyUserErrors.employeeCode}</small> : null}
+              </label>
+
+              <div className="superadmin-package-form-row superadmin-package-form-row-four">
+                <label className="superadmin-package-form-field">
+                  <span>Role</span>
+                  <select
+                    value={companyUserForm.role}
+                    onChange={(event) => setCompanyUserForm((current) => ({ ...current, role: event.target.value }))}
+                  >
+                    {companySetupRoleOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  {companyUserErrors.role ? <small className="superadmin-package-error">{companyUserErrors.role}</small> : null}
+                </label>
+
+                <label className="superadmin-package-form-field">
+                  <span>Status</span>
+                  <select
+                    value={companyUserForm.status}
+                    onChange={(event) => setCompanyUserForm((current) => ({ ...current, status: event.target.value }))}
+                  >
+                    {companySetupUserStatusOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {capitalize(option)}
+                      </option>
+                    ))}
+                  </select>
+                  {companyUserErrors.status ? <small className="superadmin-package-error">{companyUserErrors.status}</small> : null}
+                </label>
+
+                <label className="superadmin-package-form-field">
+                  <span>Joined At</span>
+                  <input
+                    type="date"
+                    value={companyUserForm.joinedAt}
+                    onChange={(event) => setCompanyUserForm((current) => ({ ...current, joinedAt: event.target.value }))}
+                  />
+                </label>
+
+                <label className="superadmin-package-form-field">
+                  <span>Left At</span>
+                  <input
+                    type="date"
+                    value={companyUserForm.leftAt}
+                    onChange={(event) => setCompanyUserForm((current) => ({ ...current, leftAt: event.target.value }))}
+                  />
+                </label>
+              </div>
+
+              {companyUserErrors.form ? <small className="superadmin-package-error">{companyUserErrors.form}</small> : null}
+
+              <div className="superadmin-package-form-actions">
+                <button
+                  type="button"
+                  className="superadmin-package-modal-button secondary"
+                  onClick={resetCompanyUserForm}
+                >
+                  Reset
+                </button>
+                <button type="submit" className="superadmin-package-modal-button primary">
+                  {companyUserForm.id ? 'Update Assignment' : 'Assign User'}
+                </button>
+              </div>
+            </form>
+          </SmallCard>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <DashboardShell
       activeKey={sidebarActiveKey}
@@ -897,33 +1085,28 @@ export default function CompanySetup() {
 
       <div className="superadmin-package-tabs">
         {tabs.map((item) => (
-          item.key === 'create' ? (
-            <button
-              key={item.key}
-              type="button"
-              className={`superadmin-package-tab ${tab === item.key ? 'active' : ''}`}
-              onClick={() => navigate('/super-admin/company-setup/create')}
-            >
-              {item.label}
-            </button>
-          ) : (
-            <button
-              key={item.key}
-              type="button"
-              className={`superadmin-package-tab ${tab === item.key ? 'active' : ''}`}
-              onClick={() => {
-                setTab(item.key);
+          <button
+            key={item.key}
+            type="button"
+            className={`superadmin-package-tab ${tab === item.key ? 'active' : ''}`}
+            onClick={() => {
+              setTab(item.key);
+              if (item.key === 'create') {
+                resetCompanyUserForm();
+              } else {
                 navigate(tabToHash[item.key] || '#overview', { replace: true });
-              }}
-            >
-              {item.label}
-            </button>
-          )
+              }
+            }}
+          >
+            {item.label}
+          </button>
         ))}
       </div>
 
       {tab === 'overview' ? overview : null}
       {tab === 'companies' && isSuperAdmin ? companiesTab : null}
+      {tab === 'users' ? employeeListTab : null}
+      {tab === 'create' ? createEmployeeTab : null}
     </DashboardShell>
   );
 }

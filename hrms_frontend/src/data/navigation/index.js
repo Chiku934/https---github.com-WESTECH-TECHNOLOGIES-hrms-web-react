@@ -483,6 +483,24 @@ export function resolveRoleFromStorage() {
 }
 
 /**
+ * Resolve the role that should be used for the current UI view.
+ * If a super-admin switches to company or employee view, honor that mode
+ * while keeping the underlying login role intact.
+ */
+export function resolveEffectiveRoleFromStorage() {
+  if (typeof window === 'undefined') {
+    return resolveRoleFromStorage();
+  }
+
+  const viewMode = window.localStorage.getItem('hrms_view_mode');
+  if (viewMode) {
+    return normalizeRole(viewMode);
+  }
+
+  return resolveRoleFromStorage();
+}
+
+/**
  * Asynchronously resolve the current user's role from backend API with localStorage fallback
  * This is the preferred method for getting fresh role data.
  * @returns {Promise<string>} Promise resolving to the user's role constant
