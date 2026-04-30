@@ -1,196 +1,101 @@
-import axiosClient from './axiosClient';
+import api from './api';
 
-/**
- * Role Service
- * Handles all role and permission-related API calls
- */
 const roleService = {
   /**
-   * Get all roles for a company
-   * @param {number} companyId - Company ID
-   * @param {Object} params - Query parameters (page, limit, search, etc.)
-   * @returns {Promise} API response
+   * Get all roles for the current company
+   * @returns {Promise<Object>} - API response with roles array
    */
-  getAllRoles: async (companyId, params = {}) => {
+  listRoles: async () => {
     try {
-      const response = await axiosClient.get(`/companies/${companyId}/roles`, { params });
-      return response.data;
+      const response = await api.get('/roles');
+      return response;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error('Error fetching roles:', error);
+      throw error;
     }
   },
 
   /**
-   * Get role by ID
-   * @param {number} companyId - Company ID
-   * @param {number} roleId - Role ID
-   * @returns {Promise} API response
+   * Get a single role by ID with its permissions
+   * @param {number|string} id - Role ID
+   * @returns {Promise<Object>} - API response with role data
    */
-  getRoleById: async (companyId, roleId) => {
+  getRoleById: async (id) => {
     try {
-      const response = await axiosClient.get(`/companies/${companyId}/roles/${roleId}`);
-      return response.data;
+      const response = await api.get(`/roles/${id}`);
+      return response;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error(`Error fetching role with ID ${id}:`, error);
+      throw error;
     }
   },
 
   /**
    * Create a new role
-   * @param {number} companyId - Company ID
    * @param {Object} roleData - Role data
-   * @returns {Promise} API response
+   * @param {string} roleData.name - Role name (required)
+   * @param {string} roleData.description - Role description (optional)
+   * @param {number[]} roleData.permission_ids - Array of permission IDs (optional)
+   * @returns {Promise<Object>} - API response with created role
    */
-  createRole: async (companyId, roleData) => {
+  createRole: async (roleData) => {
     try {
-      const response = await axiosClient.post(`/companies/${companyId}/roles`, roleData);
-      return response.data;
+      const response = await api.post('/roles', roleData);
+      return response;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error('Error creating role:', error);
+      throw error;
     }
   },
 
   /**
    * Update an existing role
-   * @param {number} companyId - Company ID
-   * @param {number} roleId - Role ID
+   * @param {number|string} id - Role ID
    * @param {Object} roleData - Updated role data
-   * @returns {Promise} API response
+   * @param {string} roleData.name - Role name
+   * @param {string} roleData.description - Role description (optional)
+   * @param {number[]} roleData.permission_ids - Array of permission IDs (optional)
+   * @returns {Promise<Object>} - API response with updated role
    */
-  updateRole: async (companyId, roleId, roleData) => {
+  updateRole: async (id, roleData) => {
     try {
-      const response = await axiosClient.put(`/companies/${companyId}/roles/${roleId}`, roleData);
-      return response.data;
+      const response = await api.put(`/roles/${id}`, roleData);
+      return response;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error(`Error updating role with ID ${id}:`, error);
+      throw error;
     }
   },
 
   /**
    * Delete a role
-   * @param {number} companyId - Company ID
-   * @param {number} roleId - Role ID
-   * @returns {Promise} API response
+   * @param {number|string} id - Role ID
+   * @returns {Promise<Object>} - API response confirming deletion
    */
-  deleteRole: async (companyId, roleId) => {
+  deleteRole: async (id) => {
     try {
-      const response = await axiosClient.delete(`/companies/${companyId}/roles/${roleId}`);
-      return response.data;
+      const response = await api.delete(`/roles/${id}`);
+      return response;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error(`Error deleting role with ID ${id}:`, error);
+      throw error;
     }
   },
 
   /**
-   * Get all permissions
-   * @param {number} companyId - Company ID
-   * @returns {Promise} API response
+   * Get all available permission codes in the system
+   * This is a global endpoint and not company-scoped
+   * @returns {Promise<Object>} - API response with permissions array
    */
-  getAllPermissions: async (companyId) => {
+  loadPermissionCatalog: async () => {
     try {
-      const response = await axiosClient.get(`/companies/${companyId}/permissions`);
-      return response.data;
+      const response = await api.get('/permissions/catalog');
+      return response;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error('Error loading permission catalog:', error);
+      throw error;
     }
-  },
-
-  /**
-   * Get permissions for a specific role
-   * @param {number} companyId - Company ID
-   * @param {number} roleId - Role ID
-   * @returns {Promise} API response
-   */
-  getRolePermissions: async (companyId, roleId) => {
-    try {
-      const response = await axiosClient.get(`/companies/${companyId}/roles/${roleId}/permissions`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  /**
-   * Update permissions for a role
-   * @param {number} companyId - Company ID
-   * @param {number} roleId - Role ID
-   * @param {Array<number>} permissionIds - Array of permission IDs
-   * @returns {Promise} API response
-   */
-  updateRolePermissions: async (companyId, roleId, permissionIds) => {
-    try {
-      const response = await axiosClient.put(`/companies/${companyId}/roles/${roleId}/permissions`, {
-        permission_ids: permissionIds
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  /**
-   * Assign role to users
-   * @param {number} companyId - Company ID
-   * @param {number} roleId - Role ID
-   * @param {Array<number>} userIds - Array of user IDs
-   * @returns {Promise} API response
-   */
-  assignToUsers: async (companyId, roleId, userIds) => {
-    try {
-      const response = await axiosClient.post(`/companies/${companyId}/roles/${roleId}/assign`, {
-        user_ids: userIds
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  /**
-   * Get users by role
-   * @param {number} companyId - Company ID
-   * @param {number} roleId - Role ID
-   * @returns {Promise} API response
-   */
-  getUsersByRole: async (companyId, roleId) => {
-    try {
-      const response = await axiosClient.get(`/companies/${companyId}/roles/${roleId}/users`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  /**
-   * Get role hierarchy (for reporting structure)
-   * @param {number} companyId - Company ID
-   * @returns {Promise} API response
-   */
-  getRoleHierarchy: async (companyId) => {
-    try {
-      const response = await axiosClient.get(`/companies/${companyId}/roles/hierarchy`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  /**
-   * Check if user has specific permission
-   * @param {number} companyId - Company ID
-   * @param {string} permissionCode - Permission code to check
-   * @returns {Promise} API response
-   */
-  checkPermission: async (companyId, permissionCode) => {
-    try {
-      const response = await axiosClient.get(`/companies/${companyId}/permissions/check`, {
-        params: { code: permissionCode }
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
+  }
 };
 
 export default roleService;

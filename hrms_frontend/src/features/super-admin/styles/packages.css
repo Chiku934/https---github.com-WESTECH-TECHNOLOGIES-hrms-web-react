@@ -269,6 +269,8 @@
 
 .superadmin-package-full {
   grid-column: 1 / -1;
+  padding: 10px;
+  border-radius: 15px !important;
 }
 
 .superadmin-package-stats-card,
@@ -277,7 +279,7 @@
 .superadmin-package-table-card {
   padding: 18px;
   border-radius: 16px;
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 16px 36px rgb(15 23 42 / 35%);
 }
 
 .superadmin-package-mini-card {

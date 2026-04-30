@@ -41,6 +41,7 @@ import CompanyAdminProjectManagement from '../../features/company-admin/pages/Pr
 import CompanyAdminTimesheet from '../../features/company-admin/pages/Timesheet';
 import CompanyAdminReports from '../../features/company-admin/pages/Reports';
 import CompanyAdminTeamSetup from '../../features/company-admin/pages/TeamSetup';
+import RoleManagement from '../../features/company-admin/pages/RoleManagement';
 import CompanySetup from '../../features/company-setup/pages/CompanySetup';
 import CompanyCreate from '../../features/company-setup/pages/CompanyCreate';
 import { ROUTES } from '../../router/routePaths';
@@ -214,6 +215,7 @@ const rawRouteConfig = [
   { path: ROUTES.companyAdminEmployeeManagement, element: <CompanySetup /> },
   { path: ROUTES.companyAdminCreateTeam, element: <CompanyAdminTeamSetup /> },
   { path: ROUTES.companyAdminAssignTeam, element: <CompanyAdminTeamSetup /> },
+  { path: '/company-admin/roles', element: <RoleManagement /> },
   { path: ROUTES.projects, element: <CompanyAdminProjectManagement /> },
   { path: ROUTES.companyAdminProjectManagement, element: <CompanyAdminProjectManagement /> },
   { path: ROUTES.companyAdminTimesheet, element: <CompanyAdminTimesheet /> },

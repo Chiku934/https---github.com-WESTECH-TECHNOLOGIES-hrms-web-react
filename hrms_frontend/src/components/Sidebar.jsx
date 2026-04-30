@@ -493,6 +493,11 @@ export default function Sidebar({
   
   const userInitials = getInitials(userName || roleDisplayName);
 
+  const clearViewMode = () => {
+    window.localStorage.removeItem('hrms_view_mode');
+    window.localStorage.removeItem('hrms_persistent_view_mode');
+  };
+
   return (
     <div className={`sidebar ${isSidebarExpanded ? 'expanded' : 'collapsed'}`}>
       {/* Sidebar Header */}
@@ -560,6 +565,7 @@ export default function Sidebar({
           className="sidebar-logout-btn"
           onClick={() => {
             window.localStorage.removeItem('hrms_role');
+            clearViewMode();
             navigate('/login', { replace: true });
           }}
         >
@@ -574,7 +580,7 @@ export default function Sidebar({
                 type="button"
                 className="sidebar-return-btn"
                 onClick={() => {
-                  window.localStorage.removeItem('hrms_persistent_view_mode');
+                  clearViewMode();
                   navigate('/dashboard');
                 }}
               >

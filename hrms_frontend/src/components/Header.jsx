@@ -48,6 +48,16 @@ export default function Header({
 
   // Check if user is super admin
   const isSuperAdmin = actualRole === ROLES.SUPER_ADMIN;
+
+  const syncViewMode = (mode) => {
+    window.localStorage.setItem('hrms_view_mode', mode);
+    window.localStorage.setItem('hrms_persistent_view_mode', mode);
+  };
+
+  const clearViewMode = () => {
+    window.localStorage.removeItem('hrms_view_mode');
+    window.localStorage.removeItem('hrms_persistent_view_mode');
+  };
   
   // Get current view mode from localStorage (default to actual role)
   const getCurrentViewMode = () => {
@@ -57,17 +67,17 @@ export default function Header({
 
   // Handle view mode switch
   const handleSwitchToCompanyAdminView = () => {
-    window.localStorage.setItem('hrms_persistent_view_mode', ROLES.COMPANY_ADMIN);
+    syncViewMode(ROLES.COMPANY_ADMIN);
     navigate(ROUTES.superAdminCompanyView, { replace: true });
   };
 
   const handleSwitchToEmployeeView = () => {
-    window.localStorage.setItem('hrms_persistent_view_mode', ROLES.EMPLOYEE);
+    syncViewMode(ROLES.EMPLOYEE);
     navigate(ROUTES.superAdminEmployeeView, { replace: true });
   };
 
   const handleSwitchToSuperAdminView = () => {
-    window.localStorage.removeItem('hrms_persistent_view_mode');
+    clearViewMode();
     navigate(ROUTES.dashboard, { replace: true });
   };
 
@@ -196,7 +206,7 @@ export default function Header({
                   role="menuitem"
                   onClick={() => {
                     window.localStorage.removeItem('hrms_role');
-                    window.localStorage.removeItem('hrms_view_mode');
+                    clearViewMode();
                     navigate('/login', { replace: true });
                   }}
                 >

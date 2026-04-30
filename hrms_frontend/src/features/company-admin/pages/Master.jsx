@@ -379,6 +379,8 @@ export default function CompanyAdminMaster() {
       name: value,
       status: 'Active',
       code: `DEP-${Date.now().toString().slice(-6)}`,
+      parent_id: null,
+      head_id: null,
     };
 
     try {
@@ -434,6 +436,7 @@ export default function CompanyAdminMaster() {
       name: value,
       status: 'Active',
       note: 'Level 1', // Default level
+      level: 1,
     };
 
     try {
@@ -652,8 +655,8 @@ export default function CompanyAdminMaster() {
                 { key: 'name', label: 'Department Name', render: (item) => item.name },
               ]}
               itemLabel="department"
-              emptyTitle="No departments yet"
-              emptySubtitle="Add a department from the form on the left."
+              emptyTitle="No departments found"
+              emptySubtitle="Add a department using the form on the left to get started."
               onEdit={(item) => {
                 setDepartmentName(item.name);
                 setEditingDepartmentId(item.id);
@@ -701,8 +704,8 @@ export default function CompanyAdminMaster() {
                 { key: 'name', label: 'Designation Name', render: (item) => item.name },
               ]}
               itemLabel="designation"
-              emptyTitle="No designations yet"
-              emptySubtitle="Add a designation from the form on the left."
+              emptyTitle="No designations found"
+              emptySubtitle="Add a designation using the form on the left to get started."
               onEdit={(item) => {
                 setDesignationName(item.name);
                 setEditingDesignationId(item.id);

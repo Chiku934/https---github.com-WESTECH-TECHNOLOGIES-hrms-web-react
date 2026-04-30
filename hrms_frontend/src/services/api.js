@@ -117,13 +117,15 @@ export const employeeProfileAPI = {
   delete: (id) => api.delete(`/employee-profiles/${id}`),
 };
 
-// Roles API
+// Roles API - Basic CRUD operations
+// For advanced role management, use the dedicated roleService
 export const roleAPI = {
   getAll: () => api.get('/roles'),
   getById: (id) => api.get(`/roles/${id}`),
   create: (data) => api.post('/roles', data),
   update: (id, data) => api.put(`/roles/${id}`, data),
   delete: (id) => api.delete(`/roles/${id}`),
+  getPermissions: () => api.get('/roles/permissions'),
 };
 
 // Permissions API

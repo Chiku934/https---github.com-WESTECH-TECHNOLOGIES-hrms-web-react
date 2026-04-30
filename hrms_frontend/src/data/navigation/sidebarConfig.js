@@ -272,6 +272,21 @@ const companyAdminSectionsWithoutDashboard = [
     ],
   }),
   createSection({
+    key: 'role-management',
+    label: 'Role Management',
+    icon: 'key',
+    activeKeys: [
+      'company-admin-role-overview',
+      'company-admin-role-list',
+      'company-admin-role-create',
+    ],
+    items: [
+      createItem('Overview', '/company-admin/roles#overview', 'company-admin-role-overview'),
+      createItem('Roles', '/company-admin/roles#list', 'company-admin-role-list'),
+      createItem('Create Role', '/company-admin/roles#create', 'company-admin-role-create'),
+    ],
+  }),
+  createSection({
     key: 'employee-management',
     label: 'Employee Management',
     icon: 'users',

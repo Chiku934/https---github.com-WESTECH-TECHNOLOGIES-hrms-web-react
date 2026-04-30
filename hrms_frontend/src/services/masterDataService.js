@@ -1,67 +1,41 @@
 import { departmentAPI, designationAPI } from './api';
 
-// Storage keys for fallback
+// Storage keys
 const DEPARTMENT_STORAGE_KEY = 'hrms_departments';
 const DESIGNATION_STORAGE_KEY = 'hrms_designations';
 
-// Default static data for fallback
-const defaultDepartments = [
-  { id: '1', name: 'React development', status: 'Active' },
-  { id: '2', name: 'Php Development', status: 'Active' },
-  { id: '3', name: 'Finance Department', status: 'Active' },
-  { id: '4', name: 'Php Development', status: 'Active' },
-  { id: '5', name: 'IT Department', status: 'Draft' },
-];
-
-const defaultDesignations = [
-  { id: '1', name: 'Sr PHP Developer', status: 'Active' },
-  { id: '2', name: 'Jr Php Developer', status: 'Active' },
-  { id: '3', name: 'React Developer', status: 'Active' },
-  { id: '4', name: 'Intern', status: 'Draft' },
-  { id: '5', name: 'Mobile App Developer', status: 'Active' },
-  { id: '6', name: 'Accountant', status: 'Active' },
-  { id: '7', name: 'Node Developer', status: 'Active' },
-  { id: '8', name: 'Networking', status: 'Active' },
-  { id: '9', name: 'Manager', status: 'Active' },
-];
-
-// Helper functions for localStorage fallback
-function readStorage(key, fallback) {
-  if (typeof window === 'undefined') {
+// Storage helpers
+function readStorage(key, fallback = []) {
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : fallback;
+  } catch (error) {
+    console.error(`Error reading ${key} from localStorage:`, error);
     return fallback;
   }
-  try {
-    const stored = window.localStorage.getItem(key);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (error) {
-    console.error(`Error reading from localStorage for key ${key}:`, error);
-  }
-  return fallback;
 }
 
 function writeStorage(key, value) {
-  if (typeof window !== 'undefined') {
-    try {
-      window.localStorage.setItem(key, JSON.stringify(value));
-    } catch (error) {
-      console.error(`Error writing to localStorage for key ${key}:`, error);
-    }
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Error writing ${key} to localStorage:`, error);
   }
 }
 
-// Transformation functions
+// Data transformation functions
 function transformBackendDepartmentToFrontend(department) {
   return {
     id: department.id,
     name: department.name,
-    code: department.code || `DEP-${department.id.slice(-3)}`,
-    status: 'Active', // Default status since backend doesn't have status field
+    code: department.code || `DEP-${department.id.toString().slice(-3)}`,
+    status: 'Active',
     type: 'Department',
     note: department.head?.user?.name ? `Head: ${department.head.user.name}` : 'Department',
     employeeCount: department.employeeCount || 0,
     childrenCount: department.childrenCount || 0,
+    parent_id: department.parent_id,
+    head_id: department.head_id,
   };
 }
 
@@ -69,28 +43,26 @@ function transformBackendDesignationToFrontend(designation) {
   return {
     id: designation.id,
     name: designation.title,
-    code: `DES-${designation.id.slice(-3)}`,
-    status: 'Active', // Default status since backend doesn't have status field
+    status: 'Active',
     type: 'Designation',
     note: `Level ${designation.level}`,
-    employeeCount: designation.employeeCount || 0,
+    level: designation.level,
   };
 }
 
 function transformFrontendDepartmentToBackend(department) {
   return {
     name: department.name,
-    code: department.code.replace('DEP-', ''),
-    // Note: status is not a field in backend department model
-    // We'll need to handle active/inactive differently if needed
+    code: department.code,
+    parent_id: department.parent_id,
+    head_id: department.head_id,
   };
 }
 
 function transformFrontendDesignationToBackend(designation) {
   return {
     title: designation.name,
-    level: parseInt(designation.note?.replace('Level ', '') || '1'),
-    // Note: status is not a field in backend designation model
+    level: designation.level || 1,
   };
 }
 
@@ -98,33 +70,30 @@ function transformFrontendDesignationToBackend(designation) {
 export async function loadDepartments() {
   try {
     const response = await departmentAPI.getAll();
-    const departments = response.data?.data || [];
+    // The backend directly returns the array, not wrapped in a data property
+    const departments = response.data || [];
     
-    if (departments.length === 0) {
-      const stored = readStorage(DEPARTMENT_STORAGE_KEY, defaultDepartments);
-      return stored;
+    // Only use localStorage as cache, not as fallback for default data
+    if (departments.length > 0) {
+      const transformed = departments.map(transformBackendDepartmentToFrontend);
+      writeStorage(DEPARTMENT_STORAGE_KEY, transformed);
+      return transformed;
     }
     
-    const transformed = departments.map(transformBackendDepartmentToFrontend);
-    writeStorage(DEPARTMENT_STORAGE_KEY, transformed);
-    return transformed;
+    // If no departments from API, check localStorage cache
+    const cached = readStorage(DEPARTMENT_STORAGE_KEY, []);
+    return cached;
   } catch (error) {
     console.error('Error loading departments from API:', error);
-    return readStorage(DEPARTMENT_STORAGE_KEY, defaultDepartments);
+    // Only return cached data if available, don't use default data
+    return readStorage(DEPARTMENT_STORAGE_KEY, []);
   }
 }
 
 export async function saveDepartments(departments) {
   try {
-    // For now, we'll save to localStorage as fallback
-    // In a real implementation, we would make API calls for each department
+    // Save to localStorage as cache
     writeStorage(DEPARTMENT_STORAGE_KEY, departments);
-    
-    // Note: In a real app, we would need to:
-    // 1. Check which departments are new (create via POST)
-    // 2. Check which departments exist (update via PUT)
-    // 3. Check which departments were deleted (delete via DELETE)
-    // For simplicity, we're just saving to localStorage
     return { success: true, message: 'Departments saved locally' };
   } catch (error) {
     console.error('Error saving departments:', error);
@@ -137,33 +106,21 @@ export async function createDepartment(departmentData) {
     const backendData = transformFrontendDepartmentToBackend(departmentData);
     const response = await departmentAPI.create(backendData);
     
-    if (response.data?.status === 'success') {
-      const newDepartment = transformBackendDepartmentToFrontend(response.data.data);
+    if (response.status === 'success' || response.data) {
+      const newDepartment = transformBackendDepartmentToFrontend(response.data);
       
-      // Update local storage
-      const currentDepartments = readStorage(DEPARTMENT_STORAGE_KEY, defaultDepartments);
+      // Update local storage cache
+      const currentDepartments = readStorage(DEPARTMENT_STORAGE_KEY, []);
       const updatedDepartments = [...currentDepartments, newDepartment];
       writeStorage(DEPARTMENT_STORAGE_KEY, updatedDepartments);
       
       return { success: true, data: newDepartment };
     }
-    return { success: false, message: response.data?.message || 'Failed to create department' };
+    
+    return { success: false, message: response.message || 'Failed to create department' };
   } catch (error) {
     console.error('Error creating department:', error);
-    
-    // Fallback: add to localStorage with a temporary ID
-    const tempId = `temp-${Date.now()}`;
-    const newDepartment = {
-      ...departmentData,
-      id: tempId,
-      code: departmentData.code || `DEP-${tempId.slice(-6)}`,
-    };
-    
-    const currentDepartments = readStorage(DEPARTMENT_STORAGE_KEY, defaultDepartments);
-    const updatedDepartments = [...currentDepartments, newDepartment];
-    writeStorage(DEPARTMENT_STORAGE_KEY, updatedDepartments);
-    
-    return { success: true, data: newDepartment, isLocal: true };
+    return { success: false, message: 'An error occurred while creating department' };
   }
 }
 
@@ -172,11 +129,11 @@ export async function updateDepartment(id, departmentData) {
     const backendData = transformFrontendDepartmentToBackend(departmentData);
     const response = await departmentAPI.update(id, backendData);
     
-    if (response.data?.status === 'success') {
-      const updatedDepartment = transformBackendDepartmentToFrontend(response.data.data);
+    if (response.status === 'success' || response.data) {
+      const updatedDepartment = transformBackendDepartmentToFrontend(response.data);
       
-      // Update local storage
-      const currentDepartments = readStorage(DEPARTMENT_STORAGE_KEY, defaultDepartments);
+      // Update local storage cache
+      const currentDepartments = readStorage(DEPARTMENT_STORAGE_KEY, []);
       const updatedDepartments = currentDepartments.map(dept => 
         dept.id === id ? updatedDepartment : dept
       );
@@ -184,18 +141,11 @@ export async function updateDepartment(id, departmentData) {
       
       return { success: true, data: updatedDepartment };
     }
-    return { success: false, message: response.data?.message || 'Failed to update department' };
+    
+    return { success: false, message: response.message || 'Failed to update department' };
   } catch (error) {
     console.error('Error updating department:', error);
-    
-    // Fallback: update in localStorage
-    const currentDepartments = readStorage(DEPARTMENT_STORAGE_KEY, defaultDepartments);
-    const updatedDepartments = currentDepartments.map(dept => 
-      dept.id === id ? { ...dept, ...departmentData } : dept
-    );
-    writeStorage(DEPARTMENT_STORAGE_KEY, updatedDepartments);
-    
-    return { success: true, data: { ...departmentData, id }, isLocal: true };
+    return { success: false, message: 'An error occurred while updating department' };
   }
 }
 
@@ -203,24 +153,19 @@ export async function deleteDepartment(id) {
   try {
     const response = await departmentAPI.delete(id);
     
-    if (response.data?.status === 'success') {
-      // Update local storage
-      const currentDepartments = readStorage(DEPARTMENT_STORAGE_KEY, defaultDepartments);
+    if (response.status === 'success' || response.data !== undefined) {
+      // Update local storage cache
+      const currentDepartments = readStorage(DEPARTMENT_STORAGE_KEY, []);
       const updatedDepartments = currentDepartments.filter(dept => dept.id !== id);
       writeStorage(DEPARTMENT_STORAGE_KEY, updatedDepartments);
       
-      return { success: true };
+      return { success: true, message: 'Department deleted successfully' };
     }
-    return { success: false, message: response.data?.message || 'Failed to delete department' };
+    
+    return { success: false, message: response.message || 'Failed to delete department' };
   } catch (error) {
     console.error('Error deleting department:', error);
-    
-    // Fallback: remove from localStorage
-    const currentDepartments = readStorage(DEPARTMENT_STORAGE_KEY, defaultDepartments);
-    const updatedDepartments = currentDepartments.filter(dept => dept.id !== id);
-    writeStorage(DEPARTMENT_STORAGE_KEY, updatedDepartments);
-    
-    return { success: true, isLocal: true };
+    return { success: false, message: 'An error occurred while deleting department' };
   }
 }
 
@@ -228,24 +173,29 @@ export async function deleteDepartment(id) {
 export async function loadDesignations() {
   try {
     const response = await designationAPI.getAll();
-    const designations = response.data?.data || [];
+    // The backend directly returns the array, not wrapped in a data property
+    const designations = response.data || [];
     
-    if (designations.length === 0) {
-      const stored = readStorage(DESIGNATION_STORAGE_KEY, defaultDesignations);
-      return stored;
+    // Only use localStorage as cache, not as fallback for default data
+    if (designations.length > 0) {
+      const transformed = designations.map(transformBackendDesignationToFrontend);
+      writeStorage(DESIGNATION_STORAGE_KEY, transformed);
+      return transformed;
     }
     
-    const transformed = designations.map(transformBackendDesignationToFrontend);
-    writeStorage(DESIGNATION_STORAGE_KEY, transformed);
-    return transformed;
+    // If no designations from API, check localStorage cache
+    const cached = readStorage(DESIGNATION_STORAGE_KEY, []);
+    return cached;
   } catch (error) {
     console.error('Error loading designations from API:', error);
-    return readStorage(DESIGNATION_STORAGE_KEY, defaultDesignations);
+    // Only return cached data if available, don't use default data
+    return readStorage(DESIGNATION_STORAGE_KEY, []);
   }
 }
 
 export async function saveDesignations(designations) {
   try {
+    // Save to localStorage as cache
     writeStorage(DESIGNATION_STORAGE_KEY, designations);
     return { success: true, message: 'Designations saved locally' };
   } catch (error) {
@@ -259,33 +209,21 @@ export async function createDesignation(designationData) {
     const backendData = transformFrontendDesignationToBackend(designationData);
     const response = await designationAPI.create(backendData);
     
-    if (response.data?.status === 'success') {
-      const newDesignation = transformBackendDesignationToFrontend(response.data.data);
+    if (response.status === 'success' || response.data) {
+      const newDesignation = transformBackendDesignationToFrontend(response.data);
       
-      // Update local storage
-      const currentDesignations = readStorage(DESIGNATION_STORAGE_KEY, defaultDesignations);
+      // Update local storage cache
+      const currentDesignations = readStorage(DESIGNATION_STORAGE_KEY, []);
       const updatedDesignations = [...currentDesignations, newDesignation];
       writeStorage(DESIGNATION_STORAGE_KEY, updatedDesignations);
       
       return { success: true, data: newDesignation };
     }
-    return { success: false, message: response.data?.message || 'Failed to create designation' };
+    
+    return { success: false, message: response.message || 'Failed to create designation' };
   } catch (error) {
     console.error('Error creating designation:', error);
-    
-    // Fallback: add to localStorage with a temporary ID
-    const tempId = `temp-${Date.now()}`;
-    const newDesignation = {
-      ...designationData,
-      id: tempId,
-      code: designationData.code || `DES-${tempId.slice(-6)}`,
-    };
-    
-    const currentDesignations = readStorage(DESIGNATION_STORAGE_KEY, defaultDesignations);
-    const updatedDesignations = [...currentDesignations, newDesignation];
-    writeStorage(DESIGNATION_STORAGE_KEY, updatedDesignations);
-    
-    return { success: true, data: newDesignation, isLocal: true };
+    return { success: false, message: 'An error occurred while creating designation' };
   }
 }
 
@@ -294,11 +232,11 @@ export async function updateDesignation(id, designationData) {
     const backendData = transformFrontendDesignationToBackend(designationData);
     const response = await designationAPI.update(id, backendData);
     
-    if (response.data?.status === 'success') {
-      const updatedDesignation = transformBackendDesignationToFrontend(response.data.data);
+    if (response.status === 'success' || response.data) {
+      const updatedDesignation = transformBackendDesignationToFrontend(response.data);
       
-      // Update local storage
-      const currentDesignations = readStorage(DESIGNATION_STORAGE_KEY, defaultDesignations);
+      // Update local storage cache
+      const currentDesignations = readStorage(DESIGNATION_STORAGE_KEY, []);
       const updatedDesignations = currentDesignations.map(des => 
         des.id === id ? updatedDesignation : des
       );
@@ -306,18 +244,11 @@ export async function updateDesignation(id, designationData) {
       
       return { success: true, data: updatedDesignation };
     }
-    return { success: false, message: response.data?.message || 'Failed to update designation' };
+    
+    return { success: false, message: response.message || 'Failed to update designation' };
   } catch (error) {
     console.error('Error updating designation:', error);
-    
-    // Fallback: update in localStorage
-    const currentDesignations = readStorage(DESIGNATION_STORAGE_KEY, defaultDesignations);
-    const updatedDesignations = currentDesignations.map(des => 
-      des.id === id ? { ...des, ...designationData } : des
-    );
-    writeStorage(DESIGNATION_STORAGE_KEY, updatedDesignations);
-    
-    return { success: true, data: { ...designationData, id }, isLocal: true };
+    return { success: false, message: 'An error occurred while updating designation' };
   }
 }
 
@@ -325,57 +256,47 @@ export async function deleteDesignation(id) {
   try {
     const response = await designationAPI.delete(id);
     
-    if (response.data?.status === 'success') {
-      // Update local storage
-      const currentDesignations = readStorage(DESIGNATION_STORAGE_KEY, defaultDesignations);
+    if (response.status === 'success' || response.data !== undefined) {
+      // Update local storage cache
+      const currentDesignations = readStorage(DESIGNATION_STORAGE_KEY, []);
       const updatedDesignations = currentDesignations.filter(des => des.id !== id);
       writeStorage(DESIGNATION_STORAGE_KEY, updatedDesignations);
       
-      return { success: true };
+      return { success: true, message: 'Designation deleted successfully' };
     }
-    return { success: false, message: response.data?.message || 'Failed to delete designation' };
+    
+    return { success: false, message: response.message || 'Failed to delete designation' };
   } catch (error) {
     console.error('Error deleting designation:', error);
-    
-    // Fallback: remove from localStorage
-    const currentDesignations = readStorage(DESIGNATION_STORAGE_KEY, defaultDesignations);
-    const updatedDesignations = currentDesignations.filter(des => des.id !== id);
-    writeStorage(DESIGNATION_STORAGE_KEY, updatedDesignations);
-    
-    return { success: true, isLocal: true };
+    return { success: false, message: 'An error occurred while deleting designation' };
   }
 }
 
-// Combined master data functions (for screens that show both departments and designations)
+// Combined function to load all master data
 export async function loadMasterData() {
   try {
     const [departments, designations] = await Promise.all([
       loadDepartments(),
-      loadDesignations()
+      loadDesignations(),
     ]);
     
     return {
       departments,
       designations,
       masters: [...departments, ...designations].map(item => ({
-        ...item,
-        type: item.type || (item.code?.startsWith('DEP-') ? 'Department' : 'Designation'),
-        note: item.note || (item.type === 'Department' ? 'Department' : 'Designation')
-      }))
+        id: item.id,
+        name: item.name,
+        status: item.status,
+        type: item.type,
+        note: item.note,
+      })),
     };
   } catch (error) {
     console.error('Error loading master data:', error);
-    const departments = readStorage(DEPARTMENT_STORAGE_KEY, defaultDepartments);
-    const designations = readStorage(DESIGNATION_STORAGE_KEY, defaultDesignations);
-    
     return {
-      departments,
-      designations,
-      masters: [...departments, ...designations].map(item => ({
-        ...item,
-        type: item.type || (item.code?.startsWith('DEP-') ? 'Department' : 'Designation'),
-        note: item.note || (item.type === 'Department' ? 'Department' : 'Designation')
-      }))
+      departments: [],
+      designations: [],
+      masters: [],
     };
   }
 }
