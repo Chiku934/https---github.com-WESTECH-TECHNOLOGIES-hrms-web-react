@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardShell from '../../shared/components/DashboardShell';
+import Icon from '../../../components/Icon';
 import { ROLES } from '../../../app/config/roles';
 import { resolveEffectiveRoleFromStorage } from '../../../data/navigation/index.js';
 import authService from '../../../services/authService';
@@ -331,6 +332,7 @@ function StepStateChip({ value }) {
 export default function CompanyCreate() {
   const navigate = useNavigate();
   const location = useLocation();
+  const logoFileInputRef = useRef(null);
   const role = resolveEffectiveRoleFromStorage();
   const isSuperAdmin = role === ROLES.SUPER_ADMIN;
   const existingCompany = location.state?.company || null;
@@ -347,6 +349,7 @@ export default function CompanyCreate() {
   const [stepErrors, setStepErrors] = useState({
     address: {},
   });
+  const [logoPreviewError, setLogoPreviewError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -441,6 +444,10 @@ export default function CompanyCreate() {
   }, [companyForm.plan, isAdvancedUnlocked]);
 
   useEffect(() => {
+    setLogoPreviewError(false);
+  }, [wizardData.logoUrl]);
+
+  useEffect(() => {
     writeDraft(wizardKey, buildWizardPayload({
       companyForm,
       wizardData,
@@ -487,6 +494,35 @@ export default function CompanyCreate() {
   const updateWizardField = (field, value) => {
     setWizardData((current) => ({ ...current, [field]: value }));
     setStatusMessage('');
+    if (field === 'logoUrl') {
+      setLogoPreviewError(false);
+    }
+  };
+
+  const handleLogoUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const nextValue = typeof reader.result === 'string' ? reader.result : '';
+      updateWizardField('logoUrl', nextValue);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const openLogoPicker = () => {
+    if (logoFileInputRef.current) {
+      logoFileInputRef.current.value = '';
+    }
+    logoFileInputRef.current?.click();
+  };
+
+  const handleRemoveLogo = () => {
+    updateWizardField('logoUrl', '');
+    if (logoFileInputRef.current) {
+      logoFileInputRef.current.value = '';
+    }
   };
 
   const updatePermission = (permissionKey) => {
@@ -770,6 +806,8 @@ export default function CompanyCreate() {
     ...step,
     state: stepProgress[step.key] || 'pending',
   }));
+  const savedStepCount = progressSummary.filter((step) => step.state === 'saved').length;
+  const progressLabel = `${savedStepCount}/${progressSummary.length} saved`;
 
   return (
     <DashboardShell
@@ -807,43 +845,59 @@ export default function CompanyCreate() {
         })}
       </div>
 
-      <div className="superadmin-package-layout company-admin-company-create-page">
-        <div className="superadmin-package-workspace">
-          <SmallCard title="Setup Progress">
-            <div className="company-create-step-tabs" role="tablist" aria-label="Company setup steps">
-              {wizardSteps.map((item) => {
-                const isActive = activeStep === item.key;
-                const isLocked = !canOpenStep(item.key);
-                const state = stepProgress[item.key] || 'pending';
-
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    className={`superadmin-package-tab company-create-step-tab ${isActive ? 'active' : ''} ${state !== 'pending' ? state : ''} ${isLocked ? 'locked' : ''}`.trim()}
-                    onClick={() => goToStep(item.key)}
-                    disabled={isLocked || loading}
-                    aria-current={isActive ? 'step' : undefined}
-                  >
-                    <span className="company-create-step-tab-title">{item.label}</span>
-                    <span className="company-create-step-tab-helper">{item.helper}</span>
-                    <span className="company-create-step-tab-badge">
-                      <StepStateChip value={state} />
-                    </span>
-                  </button>
-                );
-              })}
+      <div className="superadmin-package-layout company-admin-company-create-page company-admin-create-employee-page">
+        <div className="superadmin-package-workspace company-admin-create-employee-workspace">
+          <div className="company-admin-create-flow-card">
+            <div className="company-admin-create-flow-copy">
+              <div className="superadmin-package-kicker">Create Flow</div>
+              <h1>Company Details unlocks the rest of the tabs.</h1>
+              <p>Keep the company profile clean and consistent so the wizard stays ready for branding, address capture, admin setup, and permissions.</p>
             </div>
-          </SmallCard>
 
-          <SmallCard>
-            <div className="company-create-form-subheader">
-              <div className="company-create-form-subheader-copy">
+            <div className="company-admin-create-flow-meta">
+              <div className="company-admin-create-flow-pill">{progressLabel}</div>
+              <div className="company-admin-create-flow-stat">
+                <span>Current Step</span>
                 <strong>{currentStep?.label || 'Company Details'}</strong>
-                <p>{currentStep?.helper || 'Complete this step and continue with the remaining setup stages.'}</p>
+              </div>
+              <div className="company-admin-create-flow-stat">
+                <span>Progress</span>
+                <strong>{stepProgress[activeStep] ? capitalize(stepProgress[activeStep]) : 'Pending'}</strong>
               </div>
             </div>
+          </div>
 
+          <div className="company-admin-create-tabs">
+            {wizardSteps.map((item) => {
+              const isActive = activeStep === item.key;
+              const isLocked = !canOpenStep(item.key);
+              const state = stepProgress[item.key] || 'pending';
+
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`company-admin-create-tab ${isActive ? 'active' : ''} ${state !== 'pending' ? state : ''} ${isLocked ? 'locked' : ''}`.trim()}
+                  onClick={() => goToStep(item.key)}
+                  disabled={isLocked || loading}
+                  aria-current={isActive ? 'step' : undefined}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <form className="company-admin-create-form" onSubmit={activeStep === 'details'
+            ? handleCompanyDetailsSubmit
+            : activeStep === 'address'
+              ? handleAddressSubmit
+              : activeStep === 'documents'
+                ? handleDocumentsSubmit
+                : activeStep === 'admin'
+                  ? handleAdminSubmit
+                  : handlePermissionsSubmit}
+          >
             {statusMessage ? (
               <div className="superadmin-empty-state company-create-inline-note" style={{ marginBottom: 14 }}>
                 {statusMessage}
@@ -851,8 +905,63 @@ export default function CompanyCreate() {
             ) : null}
 
             {activeStep === 'details' ? (
-              <form className="superadmin-package-form-grid" onSubmit={handleCompanyDetailsSubmit}>
-                <div className="superadmin-package-form-row superadmin-package-form-row-four">
+              <section className="company-admin-create-section">
+                <div className="company-admin-create-section-header">
+                  <div>
+                    <h3>Company Details</h3>
+                    <p>Brand identity, access scope, and core setup information.</p>
+                  </div>
+                  <div className="company-create-brand-media">
+                    <div
+                      className="company-create-logo-wrap"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={wizardData.logoUrl ? 'Change company logo' : 'Upload company logo'}
+                      onClick={openLogoPicker}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          openLogoPicker();
+                        }
+                      }}
+                    >
+                      <div className="company-admin-create-avatar company-create-logo-avatar" aria-hidden="true">
+                        {wizardData.logoUrl && !logoPreviewError ? (
+                          <img
+                            src={wizardData.logoUrl}
+                            alt="Company logo preview"
+                            onError={() => setLogoPreviewError(true)}
+                          />
+                        ) : (
+                          <Icon name="gallery" size={38} />
+                        )}
+                      </div>
+                      {wizardData.logoUrl ? (
+                        <button
+                          type="button"
+                          className="company-create-logo-remove"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleRemoveLogo();
+                          }}
+                          aria-label="Remove uploaded logo"
+                        >
+                          <Icon name="circle-xmark" size={18} />
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
+                <input
+                  ref={logoFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="company-create-logo-file-input"
+                  onChange={handleLogoUpload}
+                />
+
+                <div className="company-admin-create-grid company-admin-create-grid-four">
                   <label className="superadmin-package-form-field">
                     <span>Company Name</span>
                     <input
@@ -900,7 +1009,7 @@ export default function CompanyCreate() {
                   </label>
                 </div>
 
-                <div className="superadmin-package-form-row superadmin-package-form-row-four">
+                <div className="company-admin-create-grid company-admin-create-grid-four">
                   <label className="superadmin-package-form-field">
                     <span>Timezone</span>
                     <select
@@ -971,13 +1080,20 @@ export default function CompanyCreate() {
                     {submitting ? 'Saving...' : isEdit ? 'Update Company' : 'Save and Continue'}
                   </button>
                 </div>
-              </form>
+              </section>
             ) : null}
 
             {activeStep === 'address' ? (
-              <form className="superadmin-package-form-grid" onSubmit={handleAddressSubmit}>
-                <div className="superadmin-package-form-row superadmin-package-form-row-four">
-                  <label className="superadmin-package-form-field superadmin-project-wide-field">
+              <section className="company-admin-create-section">
+                <div className="company-admin-create-section-header company-admin-create-section-header-tight">
+                  <div>
+                    <h3>Address</h3>
+                    <p>Capture the company location and contact routing details.</p>
+                  </div>
+                </div>
+
+                <div className="company-admin-create-grid company-admin-create-grid-four">
+                  <label className="superadmin-package-form-field company-admin-create-wide-field">
                     <span>Address Line 1</span>
                     <input
                       value={wizardData.addressLine1}
@@ -986,7 +1102,7 @@ export default function CompanyCreate() {
                     />
                     {stepErrors.address.addressLine1 ? <small className="superadmin-package-error">{stepErrors.address.addressLine1}</small> : null}
                   </label>
-                  <label className="superadmin-package-form-field superadmin-project-wide-field">
+                  <label className="superadmin-package-form-field company-admin-create-wide-field">
                     <span>Address Line 2</span>
                     <input
                       value={wizardData.addressLine2}
@@ -1037,7 +1153,7 @@ export default function CompanyCreate() {
                   </label>
                 </div>
 
-                <div className="superadmin-package-form-row superadmin-package-form-row-four">
+                <div className="company-admin-create-grid company-admin-create-grid-four">
                   <label className="superadmin-package-form-field">
                     <span>Phone</span>
                     <input
@@ -1046,7 +1162,7 @@ export default function CompanyCreate() {
                       placeholder="+91 98765 43210"
                     />
                   </label>
-                  <label className="superadmin-package-form-field superadmin-project-wide-field">
+                  <label className="superadmin-package-form-field company-admin-create-wide-field">
                     <span>Website</span>
                     <input
                       value={wizardData.website}
@@ -1067,12 +1183,19 @@ export default function CompanyCreate() {
                     Save and Continue
                   </button>
                 </div>
-              </form>
+              </section>
             ) : null}
 
             {activeStep === 'documents' ? (
-              <form className="superadmin-package-form-grid" onSubmit={handleDocumentsSubmit}>
-                <div className="superadmin-package-form-row superadmin-package-form-row-four">
+              <section className="company-admin-create-section">
+                <div className="company-admin-create-section-header company-admin-create-section-header-tight">
+                  <div>
+                    <h3>Documents</h3>
+                    <p>Store registration and compliance information for the company record.</p>
+                  </div>
+                </div>
+
+                <div className="company-admin-create-grid company-admin-create-grid-four">
                   <label className="superadmin-package-form-field">
                     <span>Registration Number</span>
                     <input
@@ -1106,25 +1229,14 @@ export default function CompanyCreate() {
                     />
                   </label>
                 </div>
-
-                <div className="superadmin-package-form-row superadmin-package-form-row-four">
-                  <label className="superadmin-package-form-field superadmin-project-wide-field">
-                    <span>Logo URL</span>
-                    <input
-                      value={wizardData.logoUrl}
-                      onChange={(e) => updateWizardField('logoUrl', e.target.value)}
-                      placeholder="Public logo or brand image URL"
-                    />
-                  </label>
-                  <label className="superadmin-package-form-field superadmin-project-wide-field">
-                    <span>Document Notes</span>
-                    <textarea
-                      value={wizardData.documentNotes}
-                      onChange={(e) => updateWizardField('documentNotes', e.target.value)}
-                      placeholder="Add compliance or document notes here"
-                    />
-                  </label>
-                </div>
+                <label className="superadmin-package-form-field company-admin-create-wide-field">
+                  <span>Document Notes</span>
+                  <textarea
+                    value={wizardData.documentNotes}
+                    onChange={(e) => updateWizardField('documentNotes', e.target.value)}
+                    placeholder="Add compliance or document notes here"
+                  />
+                </label>
 
                 <div className="superadmin-package-form-actions company-create-actions">
                   <button type="button" className="superadmin-package-modal-button secondary" onClick={goToPreviousStep}>
@@ -1137,12 +1249,19 @@ export default function CompanyCreate() {
                     Save and Continue
                   </button>
                 </div>
-              </form>
+              </section>
             ) : null}
 
             {activeStep === 'admin' ? (
-              <form className="superadmin-package-form-grid" onSubmit={handleAdminSubmit}>
-                <div className="superadmin-package-form-row superadmin-package-form-row-four">
+              <section className="company-admin-create-section">
+                <div className="company-admin-create-section-header company-admin-create-section-header-tight">
+                  <div>
+                    <h3>Admin Setup</h3>
+                    <p>Create the first admin identity that will manage this company.</p>
+                  </div>
+                </div>
+
+                <div className="company-admin-create-grid company-admin-create-grid-four">
                   <label className="superadmin-package-form-field">
                     <span>Primary Admin Name</span>
                     <input
@@ -1189,7 +1308,7 @@ export default function CompanyCreate() {
                   </label>
                 </div>
 
-                <div className="superadmin-package-form-row superadmin-package-form-row-four">
+                <div className="company-admin-create-grid company-admin-create-grid-four">
                   <label className="superadmin-package-form-field">
                     <span>Admin Role</span>
                     <select
@@ -1201,7 +1320,7 @@ export default function CompanyCreate() {
                       <option value={ROLES.EMPLOYEE}>Employee</option>
                     </select>
                   </label>
-                  <label className="superadmin-package-form-field superadmin-project-wide-field">
+                  <label className="superadmin-package-form-field company-admin-create-wide-field">
                     <span>Admin Notes</span>
                     <textarea
                       value={wizardData.adminNotes}
@@ -1222,11 +1341,18 @@ export default function CompanyCreate() {
                     Save and Continue
                   </button>
                 </div>
-              </form>
+              </section>
             ) : null}
 
             {activeStep === 'permissions' ? (
-              <form className="superadmin-package-form-grid" onSubmit={handlePermissionsSubmit}>
+              <section className="company-admin-create-section">
+                <div className="company-admin-create-section-header company-admin-create-section-header-tight">
+                  <div>
+                    <h3>Permissions</h3>
+                    <p>Choose which company modules should be available on launch.</p>
+                  </div>
+                </div>
+
                 <div className="superadmin-empty-state" style={{ marginBottom: 8 }}>
                   Recommended modules for the <strong>{capitalize(companyForm.plan)}</strong> plan are highlighted below.
                 </div>
@@ -1276,11 +1402,11 @@ export default function CompanyCreate() {
                     Finish Setup
                   </button>
                 </div>
-              </form>
+              </section>
             ) : null}
 
             {companyErrors.form ? <small className="superadmin-package-error" style={{ display: 'block', marginTop: 12 }}>{companyErrors.form}</small> : null}
-          </SmallCard>
+          </form>
         </div>
       </div>
     </DashboardShell>

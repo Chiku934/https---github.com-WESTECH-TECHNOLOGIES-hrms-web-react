@@ -2,7 +2,8 @@ import { ROLES } from '../../../app/config/roles';
 import {
   authAPI,
   companyAPI,
-  companyUserAPI,
+  designationAPI,
+  employeeAPI,
   userAPI,
 } from '../../../services/api';
 import {
@@ -82,7 +83,47 @@ function normalizeUser(record) {
   };
 }
 
-function normalizeCompanyUser(record) {
+function normalizeDesignation(record) {
+  return {
+    id: Number(record.id),
+    title: normalizeText(record.title),
+    level: record.level === null || record.level === undefined ? null : Number(record.level),
+    createdAt: record.createdAt || record.created_at || null,
+  };
+}
+
+function splitFullName(fullName = '', email = '') {
+  const explicitName = normalizeText(fullName);
+  if (explicitName) {
+    return explicitName.split(/\s+/).filter(Boolean);
+  }
+
+  const fallback = formatDisplayName(email);
+  return fallback ? fallback.split(/\s+/).filter(Boolean) : [];
+}
+
+function buildEmployeeFullName(profile = {}, user = {}, fallbackEmail = '') {
+  const parts = [
+    normalizeText(profile.first_name),
+    normalizeText(profile.middle_name),
+    normalizeText(profile.last_name),
+  ].filter(Boolean);
+
+  if (parts.length) {
+    return parts.join(' ');
+  }
+
+  const profileName = normalizeText(profile.full_name || profile.fullName);
+  if (profileName) return profileName;
+
+  return normalizeText(
+    user.displayName
+    || user.fullName
+    || formatDisplayName(user.email || fallbackEmail),
+  );
+}
+
+function normalizeLegacyCompanyUser(record) {
   const role = record.role || record.roles?.[0]?.name || ROLES.EMPLOYEE;
 
   return {
@@ -122,40 +163,130 @@ function normalizeCompanyUser(record) {
   };
 }
 
-function mapUsersFromCompanyUsers(companyUsers) {
+function normalizeEmployee(record) {
+  const user = record.user || {};
+  const profile = record.profile || {};
+  const assignments = Array.isArray(record.assignments)
+    ? record.assignments
+    : record.assignments
+      ? [record.assignments]
+      : [];
+  const currentAssignment = assignments[0] || null;
+  const designation = currentAssignment?.designation || null;
+  const roles = Array.isArray(record.roles)
+    ? record.roles.map((item) => ({
+        id: Number(item.id),
+        name: item.name,
+        description: item.description,
+        isSystem: Boolean(item.isSystem),
+      }))
+    : [];
+  const primaryRole = roles[0]?.name || record.role || ROLES.EMPLOYEE;
+  const fullName = buildEmployeeFullName(profile, user, record.email);
+  const nameParts = splitFullName(fullName, user.email || record.email);
+  const firstName = nameParts[0] || 'New';
+  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Employee';
+
+  return {
+    id: Number(record.id),
+    companyId: Number(record.companyId || record.company_id || record.company?.id || 0),
+    companyName: normalizeText(record.company?.name || record.companyName || ''),
+    userId: Number(record.userId || record.user_id || user.id || 0),
+    employeeCode: normalizeText(record.employeeCode || record.employee_code),
+    status: normalizeText(record.status || 'active'),
+    joinedAt: normalizeText(record.joinedAt || record.joined_at),
+    leftAt: record.leftAt || record.left_at || null,
+    createdAt: record.createdAt || record.created_at || null,
+    fullName,
+    displayName: fullName,
+    userName: normalizeText(record.userName || user.userName || String(user.email || record.email || '').split('@')[0] || ''),
+    email: normalizeText(record.email || user.email || profile.personal_email || ''),
+    phone: normalizeText(record.phone || user.phone || profile.personal_phone || ''),
+    personalEmail: normalizeText(profile.personal_email || record.personalEmail || ''),
+    personalPhone: normalizeText(profile.personal_phone || record.personalPhone || ''),
+    gender: normalizeText(profile.gender || record.gender || ''),
+    bloodGroup: normalizeText(profile.blood_group || record.bloodGroup || ''),
+    dob: normalizeText(profile.dob || record.dob || ''),
+    city: normalizeText(profile.city || record.city || ''),
+    state: normalizeText(profile.state || record.state || ''),
+    addressLine1: normalizeText(profile.address_line1 || record.addressLine1 || ''),
+    addressLine2: normalizeText(profile.address_line2 || record.addressLine2 || ''),
+    postalCode: normalizeText(profile.postal_code || record.postalCode || ''),
+    profile: {
+      ...profile,
+      first_name: normalizeText(profile.first_name || firstName),
+      middle_name: normalizeText(profile.middle_name || ''),
+      last_name: normalizeText(profile.last_name || lastName),
+    },
+    assignment: currentAssignment ? {
+      ...currentAssignment,
+      designationId: Number(currentAssignment.designation_id || currentAssignment.designationId || designation?.id || 0) || null,
+      designationTitle: normalizeText(designation?.title || currentAssignment.designationTitle || ''),
+      departmentId: Number(currentAssignment.department_id || currentAssignment.departmentId || 0) || null,
+      managerId: Number(currentAssignment.manager_id || currentAssignment.managerId || 0) || null,
+      startDate: normalizeText(currentAssignment.start_date || currentAssignment.startDate),
+      endDate: normalizeText(currentAssignment.end_date || currentAssignment.endDate),
+      employmentType: normalizeText(currentAssignment.employment_type || currentAssignment.employmentType),
+      workLocation: normalizeText(currentAssignment.work_location || currentAssignment.workLocation),
+      isCurrent: Boolean(currentAssignment.is_current ?? currentAssignment.isCurrent ?? true),
+    } : null,
+    designationId: currentAssignment ? Number(currentAssignment.designation_id || currentAssignment.designationId || designation?.id || 0) || null : null,
+    designationTitle: normalizeText(designation?.title || currentAssignment?.designationTitle || ''),
+    role: primaryRole,
+    roleLabel: normalizeText(getRoleLabel(primaryRole)),
+    roleSource: roles.map((item) => item.name).filter(Boolean),
+    roles,
+    documents: Array.isArray(record.documents) ? record.documents : [],
+  };
+}
+
+function mapUsersFromEmployees(employees) {
   const seen = new Set();
 
-  return companyUsers.reduce((acc, companyUser) => {
-    const user = companyUser.user;
-    if (!user) return acc;
-
-    const key = String(user.id);
+  return employees.reduce((acc, employee) => {
+    const key = String(employee.userId || employee.id);
     if (seen.has(key)) return acc;
     seen.add(key);
 
     acc.push({
-      id: user.id,
-      displayName:
-        user.displayName
-        || user.fullName
-        || formatDisplayName(user.email),
-      fullName:
-        user.fullName
-        || user.displayName
-        || formatDisplayName(user.email),
-      userName: user.userName || String(user.email || '').split('@')[0] || '',
-      email: user.email || '',
-      phone: user.phone || '',
-      companyId: companyUser.companyId,
-      isActive: Boolean(user.isActive),
-      emailVerified: Boolean(user.emailVerified),
-      mfaEnabled: Boolean(user.mfaEnabled),
-      lastLoginAt: user.lastLoginAt || null,
-      createdAt: user.createdAt || null,
+      id: employee.userId || employee.id,
+      displayName: employee.displayName || employee.fullName,
+      fullName: employee.fullName || employee.displayName,
+      userName: employee.userName || '',
+      email: employee.email || '',
+      phone: employee.phone || '',
+      companyId: employee.companyId,
+      isActive: employee.status !== 'terminated',
+      emailVerified: false,
+      mfaEnabled: false,
+      lastLoginAt: null,
+      createdAt: employee.createdAt || null,
     });
 
     return acc;
   }, []);
+}
+
+async function loadAllEmployeesForRole(role) {
+  const pageSize = 100;
+  const records = [];
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const response = await employeeAPI.getAll({ page, limit: pageSize });
+    const payload = response?.data || {};
+    const items = Array.isArray(payload.items) ? payload.items : Array.isArray(payload) ? payload : [];
+    records.push(...items.map(normalizeEmployee));
+
+    const pagination = payload.pagination || {};
+    totalPages = Number(pagination.pages || 1);
+    page += 1;
+
+    if (!items.length) break;
+  } while (page <= totalPages);
+
+  return records;
 }
 
 async function loadCompaniesForRole(role) {
@@ -169,8 +300,14 @@ async function loadCompaniesForRole(role) {
 }
 
 async function loadCompanyUsersForRole(role) {
-  const response = await companyUserAPI.getAll();
-  return (response.data || []).map(normalizeCompanyUser);
+  const employees = await loadAllEmployeesForRole(role);
+  return employees.length
+    ? employees
+    : companySetupCompanyUserSeed.map((item) => ({
+        ...normalizeLegacyCompanyUser(item),
+        designationId: null,
+        designationTitle: item.roleLabel || getRoleLabel(item.role),
+      }));
 }
 
 async function loadUsersForRole(role) {
@@ -180,7 +317,7 @@ async function loadUsersForRole(role) {
   }
 
   const companyUsers = await loadCompanyUsersForRole(role);
-  return mapUsersFromCompanyUsers(companyUsers);
+  return mapUsersFromEmployees(companyUsers);
 }
 
 export async function loadCompanySetupCompanies(role = ROLES.SUPER_ADMIN) {
@@ -195,7 +332,24 @@ export async function loadCompanySetupCompanyUsers(role = ROLES.SUPER_ADMIN) {
   try {
     return await loadCompanyUsersForRole(role);
   } catch {
-    return companySetupCompanyUserSeed.map(normalizeCompanyUser);
+    return companySetupCompanyUserSeed.map((item) => ({
+      ...normalizeLegacyCompanyUser(item),
+      designationId: null,
+      designationTitle: item.roleLabel || getRoleLabel(item.role),
+    }));
+  }
+}
+
+export async function loadCompanySetupDesignations(role = ROLES.SUPER_ADMIN) {
+  try {
+    const response = await designationAPI.getAll();
+    return (response.data || []).map(normalizeDesignation);
+  } catch {
+    return [
+      { id: 1, title: 'Employee', level: 1 },
+      { id: 2, title: 'Team Lead', level: 2 },
+      { id: 3, title: 'Manager', level: 3 },
+    ];
   }
 }
 
@@ -226,15 +380,17 @@ export async function loadCompanyRoster(role = ROLES.SUPER_ADMIN) {
       companyId: item.companyId,
       companyName: company?.name || item.company?.name || '',
       userId: item.userId,
-      fullName: user?.fullName || item.user?.fullName || item.user?.displayName || '',
-      userName: user?.userName || item.user?.userName || '',
-      email: user?.email || item.user?.email || '',
-      phone: user?.phone || item.user?.phone || '',
+      fullName: item.fullName || user?.fullName || '',
+      userName: item.userName || user?.userName || '',
+      email: item.email || user?.email || '',
+      phone: item.phone || user?.phone || '',
       employeeCode: item.employeeCode,
       status: item.status,
       role: item.role || ROLES.EMPLOYEE,
       roleLabel: item.roleLabel || getRoleLabel(item.role),
       roleSource: item.roleSource || [],
+      designationId: item.designationId || null,
+      designationTitle: item.designationTitle || '',
       joinedAt: item.joinedAt,
       leftAt: item.leftAt,
       createdAt: item.createdAt,
@@ -270,17 +426,44 @@ export async function deleteCompany(id) {
 }
 
 export async function createCompanyUser(payload) {
-  const response = await companyUserAPI.create(payload);
-  return normalizeCompanyUser(response.data);
+  const response = await employeeAPI.create(payload);
+  const employeeId = response?.data?.id || response?.data?.data?.id || response?.id;
+
+  if (employeeId && payload.status && payload.status !== 'active') {
+    await employeeAPI.update(employeeId, { status: payload.status });
+  }
+
+  if (employeeId) {
+    const created = await employeeAPI.getById(employeeId);
+    return normalizeEmployee(created.data || created);
+  }
+
+  return normalizeEmployee(response.data || response);
 }
 
 export async function updateCompanyUser(id, payload) {
-  const response = await companyUserAPI.update(id, payload);
-  return normalizeCompanyUser(response.data);
+  const updatePayload = {
+    employee_code: payload.employee_code,
+    status: payload.status,
+    profile: payload.profile,
+  };
+
+  if (Array.isArray(payload.role_ids) && payload.role_ids.length) {
+    updatePayload.role_ids = payload.role_ids;
+  }
+
+  await employeeAPI.update(id, updatePayload);
+
+  if (payload.assignment && Object.keys(payload.assignment).length) {
+    await employeeAPI.transfer(id, payload.assignment);
+  }
+
+  const response = await employeeAPI.getById(id);
+  return normalizeEmployee(response.data || response);
 }
 
 export async function deleteCompanyUser(id) {
-  await companyUserAPI.delete(id);
+  await employeeAPI.delete(id);
 }
 
 export function getNextCompanyId(companies) {

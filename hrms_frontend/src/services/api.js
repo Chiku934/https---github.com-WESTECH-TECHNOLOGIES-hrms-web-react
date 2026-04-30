@@ -92,7 +92,7 @@ export const departmentAPI = {
 
 // Designations API
 export const designationAPI = {
-  getAll: () => api.get('/designations'),
+  getAll: (params = {}) => api.get('/designations', { params }),
   getById: (id) => api.get(`/designations/${id}`),
   create: (data) => api.post('/designations', data),
   update: (id, data) => api.put(`/designations/${id}`, data),
@@ -101,10 +101,11 @@ export const designationAPI = {
 
 // Employees API
 export const employeeAPI = {
-  getAll: () => api.get('/employees'),
+  getAll: (params = {}) => api.get('/employees', { params }),
   getById: (id) => api.get(`/employees/${id}`),
   create: (data) => api.post('/employees', data),
   update: (id, data) => api.put(`/employees/${id}`, data),
+  transfer: (id, data) => api.post(`/employees/${id}/assignment`, data),
   delete: (id) => api.delete(`/employees/${id}`),
 };
 
