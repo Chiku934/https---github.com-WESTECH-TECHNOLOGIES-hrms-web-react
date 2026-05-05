@@ -1,3 +1,4 @@
+// ✅ SYNCED WITH BACKEND - EXACT SAME CODES NOW
 const COMPANY_FEATURE_PERMISSION_CODES = {
   'employee-management': [
     'employee.view',
@@ -10,28 +11,23 @@ const COMPANY_FEATURE_PERMISSION_CODES = {
   ],
   attendance: [
     'attendance.view',
-    'attendance.mark',
-    'attendance.approve',
+    'attendance.view_all',
     'attendance.manage',
   ],
   leave: [
     'leave.view',
     'leave.approve',
+    'leave.request',
     'leave.manage',
   ],
   timesheet: [
-    'timesheet.view',
-    'timesheet.create',
-    'timesheet.update',
+    'timesheet.log',
+    'timesheet.view_all',
     'timesheet.approve',
-    'timesheet.manage',
   ],
   projects: [
     'project.view',
-    'project.create',
-    'project.update',
-    'project.delete',
-    'project.assign',
+    'project.manage',
   ],
   payroll: [
     'payroll.view',
@@ -50,9 +46,9 @@ const COMPANY_FEATURE_PERMISSION_CODES = {
     'expense.manage',
   ],
   helpdesk: [
-    'support.view',
-    'support.manage',
     'document.view',
+    'document.upload',
+    'document.verify',
   ],
 };
 
@@ -104,6 +100,35 @@ export function filterTabsByCompanyFeature(tabs = [], permissions = [], featureK
 
 export function getWizardPermissionKeys() {
   return [...WIZARD_PERMISSION_KEYS];
+}
+
+export function clearCompanyPermissionCache() {
+  if (typeof window === 'undefined') return;
+  
+  // ✅ Clear all permission cache locations completely
+  window.localStorage.removeItem('permissions');
+  
+  // Clear cached company/user objects which contain old permissions
+  const company = window.localStorage.getItem('company');
+  const user = window.localStorage.getItem('user');
+  
+  if (company) {
+    try {
+      const parsed = JSON.parse(company);
+      delete parsed.permissions;
+      if (parsed.extra_data) delete parsed.extra_data.permissions;
+      window.localStorage.setItem('company', JSON.stringify(parsed));
+    } catch {}
+  }
+  
+  if (user) {
+    try {
+      const parsed = JSON.parse(user);
+      delete parsed.permissions;
+      if (parsed.profile?.extra_data) delete parsed.profile.extra_data.permissions;
+      window.localStorage.setItem('user', JSON.stringify(parsed));
+    } catch {}
+  }
 }
 
 export function getStoredCompanyPermissions() {
