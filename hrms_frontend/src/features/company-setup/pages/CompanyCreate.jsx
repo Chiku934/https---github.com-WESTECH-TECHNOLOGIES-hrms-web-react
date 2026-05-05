@@ -29,16 +29,66 @@ const wizardSteps = [
 ];
 
 const permissionOptions = [
-  { key: 'employee-management', label: 'Employee Management', description: 'Manage users, company users, and basic organization records.' },
-  { key: 'attendance', label: 'Attendance', description: 'Enable attendance tracking and regularization.' },
-  { key: 'leave', label: 'Leave Management', description: 'Allow leave requests, approvals, and policy setup.' },
-  { key: 'timesheet', label: 'Timesheet', description: 'Allow weekly entries, approvals, and reporting.' },
-  { key: 'projects', label: 'Projects', description: 'Allow project creation, assignments, and tracking.' },
-  { key: 'payroll', label: 'Payroll', description: 'Enable payroll visibility and processing access.' },
-  { key: 'reports', label: 'Reports', description: 'Provide dashboards and export access for reporting.' },
-  { key: 'performance', label: 'Performance', description: 'Enable reviews, feedback, and performance workflows.' },
-  { key: 'expenses', label: 'Expenses', description: 'Enable expense claims and approvals.' },
-  { key: 'helpdesk', label: 'Helpdesk', description: 'Enable support tickets and knowledge base access.' },
+  {
+    key: 'employee-management',
+    label: 'Organization & Employee Management',
+    description: 'Manage employees, departments, designations, and role management.',
+    tabs: ['Employee Overview', 'Employee List', 'Create Employee', 'Departments', 'Designations', 'Roles'],
+  },
+  {
+    key: 'attendance',
+    label: 'Attendance & Holiday',
+    description: 'Enable attendance tracking, holiday list, and regularization flows.',
+    tabs: ['Attendance', 'Mark Attendance', 'Holiday List'],
+  },
+  {
+    key: 'leave',
+    label: 'Leave Management',
+    description: 'Allow leave requests, approvals, and leave policy setup.',
+    tabs: ['Leave Overview', 'Leave Requests', 'Leave Policies'],
+  },
+  {
+    key: 'projects',
+    label: 'Projects & Assignment',
+    description: 'Allow project management, project teams, and assignment workflows.',
+    tabs: ['Project Management', 'Project Assign', 'Assign Team'],
+  },
+  {
+    key: 'timesheet',
+    label: 'Timesheet',
+    description: 'Allow timesheet entry, review, and approval workflows.',
+    tabs: ['Timesheets', 'Weekly Entry', 'Approvals'],
+  },
+  {
+    key: 'payroll',
+    label: 'Payroll',
+    description: 'Enable payroll visibility, processing, and payroll approvals.',
+    tabs: ['Payroll Overview', 'Run Payroll', 'Payroll Table', 'Approval Flow'],
+  },
+  {
+    key: 'reports',
+    label: 'Reports',
+    description: 'Provide reporting dashboards and export access.',
+    tabs: ['Reports Overview', 'Monthly Reports', 'Quarterly Reports'],
+  },
+  {
+    key: 'performance',
+    label: 'Performance',
+    description: 'Enable performance reviews, feedback, and team goals.',
+    tabs: ['Performance Dashboard', 'Reviews', 'Feedback'],
+  },
+  {
+    key: 'expenses',
+    label: 'Expenses',
+    description: 'Enable expense claims, approvals, and travel expense workflows.',
+    tabs: ['Expense Claims', 'Past Claims', 'Advances'],
+  },
+  {
+    key: 'helpdesk',
+    label: 'Helpdesk',
+    description: 'Enable support tickets and knowledge base access.',
+    tabs: ['Helpdesk', 'Tickets', 'Knowledge Base'],
+  },
 ];
 
 const recommendedPermissionsByPlan = {
@@ -199,7 +249,7 @@ function normalizeRoleValueFromName(name) {
 
 function mapPermissionCodesToWizardKeys(codes = []) {
   const set = new Set();
-  const normalized = new Set((codes || []).map((code) => String(code || '').trim()));
+  const normalized = new Set((codes || []).map((code) => String(code || '').trim().toLowerCase()));
 
   ['employee-management', 'attendance', 'leave', 'timesheet', 'projects', 'payroll', 'reports', 'performance', 'expenses', 'helpdesk']
     .forEach((key) => {
@@ -208,16 +258,34 @@ function mapPermissionCodesToWizardKeys(codes = []) {
       }
     });
 
-  if ([...normalized].some((code) => code.startsWith('employee.') || code.startsWith('department.'))) {
+  if ([...normalized].some((code) => code.startsWith('employee.') || code.startsWith('department.') || code.startsWith('role.'))) {
     set.add('employee-management');
+  }
+  if ([...normalized].some((code) => code.startsWith('attendance.'))) {
+    set.add('attendance');
   }
   if ([...normalized].some((code) => code.startsWith('leave.'))) {
     set.add('leave');
   }
+  if ([...normalized].some((code) => code.startsWith('timesheet.'))) {
+    set.add('timesheet');
+  }
+  if ([...normalized].some((code) => code.startsWith('project.'))) {
+    set.add('projects');
+  }
   if ([...normalized].some((code) => code.startsWith('payroll.'))) {
     set.add('payroll');
   }
-  if ([...normalized].some((code) => code.startsWith('document.'))) {
+  if ([...normalized].some((code) => code.startsWith('report.'))) {
+    set.add('reports');
+  }
+  if ([...normalized].some((code) => code.startsWith('performance.'))) {
+    set.add('performance');
+  }
+  if ([...normalized].some((code) => code.startsWith('expense.'))) {
+    set.add('expenses');
+  }
+  if ([...normalized].some((code) => code.startsWith('support.') || code.startsWith('document.'))) {
     set.add('helpdesk');
   }
 
@@ -1157,9 +1225,13 @@ export default function CompanyCreate() {
                   <label className="superadmin-package-form-field">
                     <span>Phone</span>
                     <input
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="\d{10}"
+                      maxLength={10}
                       value={wizardData.phone}
-                      onChange={(e) => updateWizardField('phone', e.target.value)}
-                      placeholder="+91 98765 43210"
+                      onChange={(e) => updateWizardField('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      placeholder="9876543210"
                     />
                   </label>
                   <label className="superadmin-package-form-field company-admin-create-wide-field">
@@ -1273,6 +1345,8 @@ export default function CompanyCreate() {
                   <label className="superadmin-package-form-field">
                     <span>Primary Admin Email</span>
                     <input
+                      type="email"
+                      autoComplete="email"
                       value={wizardData.adminEmail}
                       onChange={(e) => updateWizardField('adminEmail', e.target.value)}
                       placeholder="admin@company.com"
@@ -1290,9 +1364,13 @@ export default function CompanyCreate() {
                   <label className="superadmin-package-form-field">
                     <span>Primary Admin Phone</span>
                     <input
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="\d{10}"
+                      maxLength={10}
                       value={wizardData.adminPhone}
-                      onChange={(e) => updateWizardField('adminPhone', e.target.value)}
-                      placeholder="+91 98765 43210"
+                      onChange={(e) => updateWizardField('adminPhone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      placeholder="9876543210"
                     />
                   </label>
                   <label className="superadmin-package-form-field">
@@ -1349,7 +1427,7 @@ export default function CompanyCreate() {
                 <div className="company-admin-create-section-header company-admin-create-section-header-tight">
                   <div>
                     <h3>Permissions</h3>
-                    <p>Choose which company modules should be available on launch.</p>
+                    <p>Choose which company tabs and feature areas should be available on launch.</p>
                   </div>
                 </div>
 
@@ -1366,7 +1444,7 @@ export default function CompanyCreate() {
                     Apply recommended permissions
                   </button>
                   <span className="superadmin-package-detail-note">
-                    You can manually skip or adjust these modules now and finish setup later.
+                    You can manually skip or adjust these tabs now and finish setup later.
                   </span>
                 </div>
 
@@ -1380,6 +1458,15 @@ export default function CompanyCreate() {
                         <div className="company-create-permission-copy">
                           <strong>{item.label}</strong>
                           <span>{item.description}</span>
+                          {item.tabs ? (
+                            <div className="company-create-permission-tabs">
+                              {item.tabs.map((tab) => (
+                                <span key={tab} className="company-create-permission-tab">
+                                  {tab}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
                         </div>
                         <input
                           type="checkbox"

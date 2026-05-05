@@ -41,10 +41,12 @@ const filterSectionByPermissions = (section, userPermissionSet, role) => {
   const filteredItems = (section.items || [])
     .map((item) => {
       const childItems = Array.isArray(item.children) && item.children.length
-        ? item.children.filter((child) => hasAnyPermission(userPermissionSet, child.requiredPermissions || []))
+        ? item.children.filter((child) => {
+            return !child.requiredPermissions?.length || hasAnyPermission(userPermissionSet, child.requiredPermissions || []);
+          })
         : [];
 
-      const itemAllowed = hasAnyPermission(userPermissionSet, item.requiredPermissions || []);
+      const itemAllowed = !item.requiredPermissions?.length || hasAnyPermission(userPermissionSet, item.requiredPermissions || []);
       const hasVisibleChildren = childItems.length > 0;
 
       if (!itemAllowed && !hasVisibleChildren) {

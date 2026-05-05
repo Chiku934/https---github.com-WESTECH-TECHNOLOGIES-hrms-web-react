@@ -1316,28 +1316,26 @@ export default function CompanySetup() {
                 <label className="superadmin-package-form-field">
                   <span>Email *</span>
                   <input
-                    value={companyUserForm.email}
-                    onChange={(event) => updateCompanyUserField('email', event.target.value)}
-                    placeholder="Enter Email"
-                  />
-                </label>
-                <label className="superadmin-package-form-field">
-                  <span>Contact *</span>
-                  <input
-                    value={companyUserForm.contact}
-                    onChange={(event) => updateCompanyUserField('contact', event.target.value)}
-                    placeholder="Enter Contact"
-                  />
-                </label>
-                <label className="superadmin-package-form-field">
-                  <span>Gender *</span>
-                  <select value={companyUserForm.gender} onChange={(event) => updateCompanyUserField('gender', event.target.value)}>
-                    {genderOptions.map((option) => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
+                      type="email"
+                      autoComplete="email"
+                      value={companyUserForm.email}
+                      onChange={(event) => updateCompanyUserField('email', event.target.value)}
+                      placeholder="Enter Email"
+                    />
+                  </label>
+                  <label className="superadmin-package-form-field">
+                    <span>Contact *</span>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="\d{10}"
+                      maxLength={10}
+                      value={companyUserForm.contact}
+                      onChange={(event) => updateCompanyUserField('contact', event.target.value.replace(/\D/g, '').slice(0, 10))}
+                      placeholder="Enter Contact"
+                    />
+                  </label>
+                </div>
 
               <div className="company-admin-create-grid company-admin-create-grid-three company-admin-create-grid-offset">
                 <label className="superadmin-package-form-field">
@@ -1351,8 +1349,12 @@ export default function CompanySetup() {
                 <label className="superadmin-package-form-field">
                   <span>Alternate Contact *</span>
                   <input
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="\d{10}"
+                    maxLength={10}
                     value={companyUserForm.alternateContact}
-                    onChange={(event) => updateCompanyUserField('alternateContact', event.target.value)}
+                    onChange={(event) => updateCompanyUserField('alternateContact', event.target.value.replace(/\D/g, '').slice(0, 10))}
                     placeholder="Enter Alt Contact"
                   />
                 </label>

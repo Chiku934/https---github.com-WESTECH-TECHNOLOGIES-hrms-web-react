@@ -58,6 +58,9 @@ function getStoredPermissions() {
       if (Array.isArray(parsedUser?.extra_data?.permissions)) {
         permissions.push(...parsedUser.extra_data.permissions);
       }
+      if (Array.isArray(parsedUser?.profile?.extra_data?.permissions)) {
+        permissions.push(...parsedUser.profile.extra_data.permissions);
+      }
     }
 
     return [...normalizeCompanyPermissionCodes(permissions)];

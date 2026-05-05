@@ -170,6 +170,9 @@ export function getStoredCompanyPermissions() {
         if (Array.isArray(parsed.extra_data?.permissions)) {
           collected.push(...parsed.extra_data.permissions);
         }
+        if (Array.isArray(parsed.profile?.extra_data?.permissions)) {
+          collected.push(...parsed.profile.extra_data.permissions);
+        }
       }
     } catch {
       // Ignore malformed local storage entries.
