@@ -450,8 +450,67 @@ export default function Sidebar({
   
   let sidebarSections;
   if (persistentViewMode === ROLES.COMPANY_ADMIN) {
-    // For persistent Company View, use Company Admin sections without Dashboard
-    sidebarSections = viewModeSidebarSections[ROLES.COMPANY_ADMIN];
+    // For persistent Company View, use exact same permission filtering as normal login
+    const permissionSet = new Set(normalizeCompanyPermissionCodes(sidebarPermissions));
+    sidebarSections = viewModeSidebarSections[ROLES.COMPANY_ADMIN]
+      .map((section) => {
+        if (section.key === 'overview') return section;
+
+        // FIRST: Check if company has permission for this WHOLE FEATURE SECTION - EXACT SAME LOGIC
+        const featureSectionKeys = {
+          'organization': ['employee-management'],
+          'role-management': ['role.manage', 'employee-management'],
+          'employee-management': ['employee-management'],
+          'attendance': ['attendance'],
+          'holiday': ['attendance', 'holiday'],
+          'leave': ['leave'],
+          'projects': ['projects'],
+          'team-setup': ['projects', 'project.assign'],
+          'timesheet': ['timesheet'],
+          'payroll': ['payroll'],
+          'reports': ['reports'],
+        };
+
+        const requiredFeatures = featureSectionKeys[section.key] || [];
+        if (requiredFeatures.length > 0 && !requiredFeatures.some(feature => permissionSet.has(feature))) {
+          // Company does NOT have permission for this entire feature section - HIDE COMPLETELY
+          return null;
+        }
+        
+        const filteredItems = (section.items || [])
+          .map((item) => {
+            const childItems = Array.isArray(item.children) && item.children.length
+              ? item.children.filter((child) => {
+                  // EXACT same logic: Show if NO permissions required OR user has required permission
+                  return !child.requiredPermissions?.length || child.requiredPermissions.some((permission) => permissionSet.has(permission));
+                })
+              : [];
+
+            // EXACT same logic: Show if NO permissions required OR user has required permission
+            const itemAllowed = !item.requiredPermissions?.length || item.requiredPermissions.some((permission) => permissionSet.has(permission));
+            const hasVisibleChildren = childItems.length > 0;
+
+            if (!itemAllowed && !hasVisibleChildren) {
+              return null;
+            }
+
+            return {
+              ...item,
+              children: childItems,
+            };
+          })
+          .filter(Boolean);
+
+        if (!filteredItems.length) {
+          return null;
+        }
+
+        return {
+          ...section,
+          items: filteredItems,
+        };
+      })
+      .filter(Boolean);
   } else if (persistentViewMode === ROLES.EMPLOYEE) {
     // For persistent Employee View, use Employee sections without Dashboard
     sidebarSections = viewModeSidebarSections[ROLES.EMPLOYEE];

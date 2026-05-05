@@ -34,10 +34,32 @@ const filterSectionByPermissions = (section, userPermissionSet, role) => {
     return section;
   }
 
-  if (section.key === 'dashboard') {
+  if (section.key === 'dashboard' || section.key === 'overview') {
     return section;
   }
 
+  // FIRST: Check if company has permission for this WHOLE FEATURE SECTION
+  const featureSectionKeys = {
+    'organization': ['employee-management'],
+    'role-management': ['role.manage', 'employee-management'],
+    'employee-management': ['employee-management'],
+    'attendance': ['attendance'],
+    'holiday': ['attendance', 'holiday'],
+    'leave': ['leave'],
+    'projects': ['projects'],
+    'team-setup': ['projects', 'project.assign'],
+    'timesheet': ['timesheet'],
+    'payroll': ['payroll'],
+    'reports': ['reports'],
+  };
+
+  const requiredFeatures = featureSectionKeys[section.key] || [];
+  if (requiredFeatures.length > 0 && !requiredFeatures.some(feature => userPermissionSet.has(feature))) {
+    // Company does NOT have permission for this entire feature section - HIDE COMPLETELY
+    return null;
+  }
+
+  // Then filter individual items inside
   const filteredItems = (section.items || [])
     .map((item) => {
       const childItems = Array.isArray(item.children) && item.children.length
@@ -490,9 +512,8 @@ const companyAdminSectionsWithoutDashboard = [
   }),
 ];
 
-// Create the original companyAdminSections with Dashboard for normal role-based navigation
+// Create companyAdminSections with ONLY Overview (no separate Dashboard)
 const companyAdminSections = [
-  dashboardSection,
   ...companyAdminSectionsWithoutDashboard
 ];
 
