@@ -73,51 +73,17 @@ export function normalizeCompanyPermissionCodes(permissions = []) {
     .filter(Boolean)
     .forEach((code) => {
       normalized.add(code);
-
-      if (COMPANY_FEATURE_PERMISSION_CODES[code]) {
-        COMPANY_FEATURE_PERMISSION_CODES[code].forEach((mappedCode) => normalized.add(mappedCode));
-      }
-
-      if (code.startsWith('employee.') || code.startsWith('department.') || code.startsWith('role.')) {
-        normalized.add('employee-management');
-      }
-
-      if (code.startsWith('attendance.')) {
-        normalized.add('attendance');
-      }
-
-      if (code.startsWith('leave.')) {
-        normalized.add('leave');
-      }
-
-      if (code.startsWith('timesheet.')) {
-        normalized.add('timesheet');
-      }
-
-      if (code.startsWith('project.')) {
-        normalized.add('projects');
-      }
-
-      if (code.startsWith('payroll.')) {
-        normalized.add('payroll');
-      }
-
-      if (code.startsWith('report.')) {
-        normalized.add('reports');
-      }
-
-      if (code.startsWith('performance.')) {
-        normalized.add('performance');
-      }
-
-      if (code.startsWith('expense.')) {
-        normalized.add('expenses');
-      }
-
-      if (code.startsWith('support.') || code.startsWith('document.')) {
-        normalized.add('helpdesk');
-      }
     });
+
+  // ✅ STOPPED RECURSIVE LOOP - Only map top level feature codes once, not nested
+  for (const [featureKey, featureCodes] of Object.entries(COMPANY_FEATURE_PERMISSION_CODES)) {
+    for (const code of featureCodes) {
+      if (normalized.has(code)) {
+        normalized.add(featureKey);
+        break;
+      }
+    }
+  }
 
   return normalized;
 }
